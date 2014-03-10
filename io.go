@@ -3,11 +3,11 @@ package config
 import (
 	"encoding/json"
 	"os"
+	"reflect"
 )
 
 func exportConfigToFile(filename string) error {
-	json, _ := json.MarshalIndent(optionsDict.Export(), "", "    ")
-
+	json, _ := json.MarshalIndent(baseOptionSet.Export(), "", "    ")
 	fp, err := os.OpenFile(filename, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0666)
 
 	if err == nil {
@@ -21,10 +21,10 @@ func exportConfigToFile(filename string) error {
 	return nil
 }
 
-func importConfigFile(filename string) error {
+func loadConfigFile(filename string) (configMap map[string]interface{}, err error) {
 	fp, err := os.Open(filename)
 	if err != nil {
-		return err
+		return
 	}
 
 	defer fp.Close()
@@ -37,24 +37,52 @@ func importConfigFile(filename string) error {
 		}
 	}
 
-	bytes := make([]byte, n)
-	fp.Read(bytes)
+	by := make([]byte, n)
+	fp.Read(by)
 
-	configMap := make(map[string]interface{})
+	configMap = make(map[string]interface{})
+	err = json.Unmarshal(by, &configMap)
 
-	err = json.Unmarshal(bytes, &configMap)
+	return
+}
 
+func importConfigFile(filename string) error {
+
+	configMap, err := loadConfigFile(filename)
 	if err != nil {
 		return err
 	}
 
-	for k, v := range configMap {
-		s, exists := optionsDict.Get(k)
+	parseConfigFileMap(configMap, "")
+	return nil
+}
 
+func parseConfigFileMap(configMap map[string]interface{}, prefix string) {
+	for k, v := range configMap {
+		s, exists := baseOptionSet.Get(prefix + k)
 		if exists {
-			s.Set(v)
+			switch s.Type.Kind() {
+			case reflect.Int64:
+				x := int64(reflect.ValueOf(v).Float())
+				s.Value = x
+
+			case reflect.Float64:
+				x := reflect.ValueOf(v).Float()
+				s.Value = x
+
+			case reflect.Bool:
+				x := reflect.ValueOf(v).Bool()
+				s.Value = x
+
+			case reflect.String:
+				x := reflect.ValueOf(v).String()
+				s.Value = x
+			}
+		} else {
+			switch v.(type) {
+			case map[string]interface{}:
+				parseConfigFileMap(v.(map[string]interface{}), k+".")
+			}
 		}
 	}
-
-	return nil
 }
