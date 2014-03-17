@@ -89,12 +89,20 @@ func Add(o *Option) {
 }
 
 func Build() {
+	// parse flags
+	flag.Parse()
+
+	// set default values
 	importFlags(true)
+
+	// determine location of config file, import it
 	config_filename := Require("config").String()
 	importConfigFile(config_filename)
-	flag.Parse()
+
+	// overwrite with flag
 	importFlags(false)
 
+	// export new config to file if necessary
 	if Require("config-export").Bool() {
 		exportConfigToFile(config_filename)
 	}
@@ -138,6 +146,8 @@ func importFlags(visitall bool) {
 			case *bool:
 				val = reflect.ValueOf(*(v.flag.(*bool)))
 			}
+
+			fmt.Println(f.Name, val, visitall, f)
 
 			target.Set(val)
 		}
