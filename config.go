@@ -147,8 +147,6 @@ func importFlags(visitall bool) {
 				val = reflect.ValueOf(*(v.flag.(*bool)))
 			}
 
-			fmt.Println(f.Name, val, visitall, f)
-
 			target.Set(val)
 		}
 	}
