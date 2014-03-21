@@ -16,6 +16,7 @@ func init() {
 	Add(Bool("config-export", false, "Export the as-run configuration to a file", false))
 }
 
+// Create an Option with the parameters given of type string
 func String(name string, default_value string, description string, exportable bool) *Option {
 
 	opt := Option{
@@ -33,6 +34,7 @@ func String(name string, default_value string, description string, exportable bo
 	return &opt
 }
 
+// Create an Option with the parameters given of type bool
 func Bool(name string, default_value bool, description string, exportable bool) *Option {
 
 	opt := Option{
@@ -50,6 +52,7 @@ func Bool(name string, default_value bool, description string, exportable bool) 
 	return &opt
 }
 
+// Create an Option with the parameters given of type int64
 func Int(name string, default_value int64, description string, exportable bool) *Option {
 
 	opt := Option{
@@ -67,6 +70,7 @@ func Int(name string, default_value int64, description string, exportable bool) 
 	return &opt
 }
 
+// Create an Option with the parameters given of type float64
 func Float(name string, default_value float64, description string, exportable bool) *Option {
 
 	opt := Option{
@@ -84,10 +88,14 @@ func Float(name string, default_value float64, description string, exportable bo
 	return &opt
 }
 
+// Adds an Option to the config
 func Add(o *Option) {
 	baseOptionSet[o.Name] = o
 }
 
+// Builds the configuration object. Starts by setting the default values as defined in code, then parses the config file,
+// then loads the overridden options from flag. If set, this also exports the as-run configuration to the the filename
+// set in the "config" option.
 func Build() {
 	// parse flags
 	flag.Parse()
@@ -108,6 +116,7 @@ func Build() {
 	}
 }
 
+// Requires that an Option with name key be found, otherwise panics.
 func Require(key string) *Option {
 
 	s, err := Get(key)
@@ -119,6 +128,7 @@ func Require(key string) *Option {
 	return s
 }
 
+// Looks for an Option with name key, returns it if found, otherwise an error.
 func Get(key string) (*Option, error) {
 
 	s, exists := baseOptionSet.Get(key)

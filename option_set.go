@@ -1,16 +1,13 @@
 package config
 
 import (
-	"fmt"
 	"strings"
 )
 
-func init() {
-	_ = fmt.Printf
-}
-
+// A map of Options, keyed by the Options' Names.
 type OptionSet map[string]*Option
 
+// Exports the OptionSet into a map that's suitable for pushing into a config.json file.
 func (os OptionSet) Export() map[string]interface{} {
 	tbr := make(map[string]interface{})
 	for _, v := range os {
@@ -40,6 +37,7 @@ func (os OptionSet) Add(o Option) {
 	os[o.Name] = &o
 }
 
+// Retrieves an Option with the Name of key, and a boolean to determine if it was found or not.
 func (os OptionSet) Get(key string) (*Option, bool) {
 	result, exists := os[key]
 	return result, exists
