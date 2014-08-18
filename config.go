@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"fmt"
+	"os"
 )
 
 var baseOptionSet OptionSet
@@ -14,6 +15,7 @@ func init() {
 
 	Add(String("config", "config.json", "The filename of the config file to use", false))
 	Add(Bool("config-export", false, "Export the as-run configuration to a file", false))
+	Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit", false))
 }
 
 // Create an Option with the parameters given of type string
@@ -111,8 +113,12 @@ func Build() {
 	importFlags(false)
 
 	// export new config to file if necessary
-	if Require("config-export").Bool() {
+	if Require("config-export").Bool() || Require("config-generate").Bool() {
 		exportConfigToFile(config_filename)
+	}
+
+	if Require("config-generate").Bool() {
+		os.Exit(0)
 	}
 }
 
