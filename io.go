@@ -2,87 +2,73 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
-	"reflect"
 )
 
-func exportConfigToFile(filename string) error {
-	json, _ := json.MarshalIndent(baseOptionSet.Export(), "", "    ")
-	fp, err := os.OpenFile(filename, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0666)
-
-	if err == nil {
-		defer fp.Close()
-
-		fp.Write(json)
-	} else {
-		return err
-	}
-
-	return nil
+type IO interface {
+	Read() (map[string]interface{}, error)
+	Write() error
 }
 
-func loadConfigFile(filename string) (configMap map[string]interface{}, err error) {
-	fp, err := os.Open(filename)
+type FileIO struct {
+	Filename string
+}
+
+func (this FileIO) Write() error {
+	json, err := json.MarshalIndent(baseOptionSet.Export(), "", "    ")
 	if err != nil {
-		return
+		return fmt.Errorf("go-config: error marshaling config: %s", err)
 	}
 
+	fp, err := os.OpenFile(this.Filename, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0666)
+	if err != nil {
+		return fmt.Errorf("go-config: file i/o open error: %s", err)
+	}
 	defer fp.Close()
 
-	var n int64 = 0
-
-	if fi, err := fp.Stat(); err == nil {
-		if size := fi.Size(); size < 1e9 {
-			n = size
-		}
+	n, err := fp.Write(json)
+	if err != nil || n < len(json) {
+		return fmt.Errorf("go-config: file i/o write error: %s", err)
 	}
 
-	by := make([]byte, n)
-	fp.Read(by)
-
-	configMap = make(map[string]interface{})
-	err = json.Unmarshal(by, &configMap)
-
-	return
-}
-
-func importConfigFile(filename string) error {
-
-	configMap, err := loadConfigFile(filename)
-	if err != nil {
-		return err
-	}
-
-	parseConfigFileMap(configMap, "")
 	return nil
 }
 
-func parseConfigFileMap(configMap map[string]interface{}, prefix string) {
-	for k, v := range configMap {
-		s, exists := baseOptionSet.Get(prefix + k)
-		if exists {
-			switch s.Type.Kind() {
-			case reflect.Int64:
-				x := int64(reflect.ValueOf(v).Float())
-				s.Value = x
-
-			case reflect.Float64:
-				x := reflect.ValueOf(v).Float()
-				s.Value = x
-
-			case reflect.Bool:
-				x := reflect.ValueOf(v).Bool()
-				s.Value = x
-
-			case reflect.String:
-				x := reflect.ValueOf(v).String()
-				s.Value = x
-			}
-		} else {
-			switch v.(type) {
-			case map[string]interface{}:
-				parseConfigFileMap(v.(map[string]interface{}), k+".")
-			}
+func (this *FileIO) Read() (err error) {
+	fp, err := os.Open(this.Filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
 		}
+
+		return fmt.Errorf("go-config: file i/o open error: %s", err)
 	}
+	defer fp.Close()
+
+	fi, err := fp.Stat()
+	if err != nil {
+		return fmt.Errorf("go-config: file i/o stat error: %s", err)
+	}
+
+	n := fi.Size()
+
+	by := make([]byte, n)
+	read, err := fp.Read(by)
+	if err != nil || int64(read) < n {
+		return fmt.Errorf("go-config: file i/o read error: %s", err)
+	}
+
+	j_map := jsonConfigMap{}
+	err = json.Unmarshal(by, &j_map)
+	if err != nil {
+		return fmt.Errorf("go-config: json unmarshal error: %s", err)
+	}
+
+	err = j_map.Parse()
+	if err != nil {
+		return fmt.Errorf("go-config: config parse error: %s", err)
+	}
+
+	return nil
 }

@@ -98,7 +98,7 @@ func Add(o *Option) {
 // Builds the configuration object. Starts by setting the default values as defined in code, then parses the config file,
 // then loads the overridden options from flag. If set, this also exports the as-run configuration to the the filename
 // set in the "config" option.
-func Build() {
+func Build() error {
 	// parse flags
 	flag.Parse()
 
@@ -106,20 +106,25 @@ func Build() {
 	importFlags(true)
 
 	// determine location of config file, import it
-	config_filename := Require("config").String()
-	importConfigFile(config_filename)
+	file := FileIO{Filename: Require("config").String()}
+	err := file.Read()
+	if err != nil {
+		return fmt.Errorf("Error building config file: %s", err)
+	}
 
 	// overwrite with flag
 	importFlags(false)
 
 	// export new config to file if necessary
 	if Require("config-export").Bool() || Require("config-generate").Bool() {
-		exportConfigToFile(config_filename)
+		file.Write()
 	}
 
 	if Require("config-generate").Bool() {
 		os.Exit(0)
 	}
+
+	return nil
 }
 
 // Requires that an Option with name key be found, otherwise panics.
