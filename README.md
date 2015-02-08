@@ -65,12 +65,13 @@ $ config-test --addend.a=5
 
 ### Automatic config file generation
 
-Every program that uses **go-config** will parse two options by default:
+Every program that uses **go-config** will parse three options by default:
 
 * `config` (string), which indicates where to look for a config file to import and parse (default: ./config.json)
 * `config-export` (bool), which, if true, will trigger an export of the config file to the path provided by **config**.
+* `config-generate` (bool), which, if true, will trigger an export of the config file to the path provided by **config** and then exit with status `0`.
 
-You can run your program with `config-export` to generate a fresh config file or overwrite the one that's there with the as-run configuration. Running the above program with `--config-export` yields:
+You can run your program with `-config-generate` to generate a fresh config file, or you can overwrite the one that's there with the as-run configuration and continue execution using `-config-export`. Running the above program with `-config-export` yields:
 
 ```bash
 $ config-test --config-export
@@ -95,7 +96,7 @@ More documentation is available [via GoDoc](http://godoc.org/github.com/jimmysaw
 ## License
 
 	The MIT License (MIT)
-	Copyright (C) 2013-2014 by Jimmy Sawczuk
+	Copyright (C) 2013-2015 by Jimmy Sawczuk
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
