@@ -2,20 +2,23 @@ package config
 
 import (
 	"flag"
-	"reflect"
-
 	"fmt"
 	"os"
+	"reflect"
 )
 
 var baseOptionSet OptionSet
 
 func init() {
-	baseOptionSet = make(OptionSet)
+	resetBaseOptionSet()
 
 	Add(String("config", "config.json", "The filename of the config file to use", false))
 	Add(Bool("config-export", false, "Export the as-run configuration to a file", false))
 	Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit", false))
+}
+
+func resetBaseOptionSet() {
+	baseOptionSet = make(OptionSet)
 }
 
 // Create an Option with the parameters given of type string
@@ -26,7 +29,7 @@ func String(name string, default_value string, description string, exportable bo
 		Description: description,
 
 		DefaultValue: reflect.ValueOf(default_value),
-		Value:        reflect.ValueOf(default_value),
+		Value:        default_value,
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
@@ -44,7 +47,7 @@ func Bool(name string, default_value bool, description string, exportable bool) 
 		Description: description,
 
 		DefaultValue: reflect.ValueOf(default_value),
-		Value:        reflect.ValueOf(default_value),
+		Value:        default_value,
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
@@ -62,7 +65,7 @@ func Int(name string, default_value int64, description string, exportable bool) 
 		Description: description,
 
 		DefaultValue: reflect.ValueOf(default_value),
-		Value:        reflect.ValueOf(default_value),
+		Value:        default_value,
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
@@ -80,7 +83,7 @@ func Float(name string, default_value float64, description string, exportable bo
 		Description: description,
 
 		DefaultValue: reflect.ValueOf(default_value),
-		Value:        reflect.ValueOf(default_value),
+		Value:        default_value,
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
@@ -100,7 +103,13 @@ func Add(o *Option) {
 // set in the "config" option.
 func Build() error {
 	// parse flags
-	flag.Parse()
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+	flag.Usage = func() {}
+
+	parse_err := flag.CommandLine.Parse(os.Args[1:])
+	if parse_err != flag.ErrHelp && parse_err != nil {
+		os.Exit(2)
+	}
 
 	// set default values
 	importFlags(true)
@@ -114,6 +123,12 @@ func Build() error {
 
 	// overwrite with flag
 	importFlags(false)
+
+	if parse_err == flag.ErrHelp {
+		Usage()
+		os.Exit(0)
+		return nil
+	}
 
 	// export new config to file if necessary
 	if Require("config-export").Bool() || Require("config-generate").Bool() {
@@ -154,27 +169,26 @@ func Get(key string) (*Option, error) {
 func importFlags(visitall bool) {
 	setter := func(f *flag.Flag) {
 		if v, exists := baseOptionSet.Get(f.Name); exists {
-			var target, val reflect.Value
-			target = reflect.ValueOf(v).Elem().FieldByName("Value")
+			var val interface{}
 
 			switch v.flag.(type) {
 			case *string:
-				val = reflect.ValueOf(*(v.flag.(*string)))
+				val = *(v.flag.(*string))
 			case *int64:
-				val = reflect.ValueOf(*(v.flag.(*int64)))
+				val = *(v.flag.(*int64))
 			case *float64:
-				val = reflect.ValueOf(*(v.flag.(*float64)))
+				val = *(v.flag.(*float64))
 			case *bool:
-				val = reflect.ValueOf(*(v.flag.(*bool)))
+				val = *(v.flag.(*bool))
 			}
 
-			target.Set(val)
+			v.Value = val
 		}
 	}
 
 	if visitall {
-		flag.VisitAll(setter)
+		flag.CommandLine.VisitAll(setter)
 	} else {
-		flag.Visit(setter)
+		flag.CommandLine.Visit(setter)
 	}
 }
