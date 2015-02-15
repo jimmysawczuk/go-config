@@ -1,5 +1,7 @@
 # go-config
 
+[ ![Codeship Status for jimmysawczuk/go-config](https://codeship.com/projects/47df1c70-96ff-0132-8354-7a1406c9da98/status?branch=master)](https://codeship.com/projects/63102)
+
 **go-config** is a configuration library for Go that can process configuration from the source code itself, config files, and the command line.
 
 ## Usage
