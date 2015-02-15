@@ -67,7 +67,7 @@ func (this *FileIO) Read() (err error) {
 
 	err = j_map.Parse()
 	if err != nil {
-		return fmt.Errorf("go-config: config parse error: %s", err)
+		return err
 	}
 
 	return nil

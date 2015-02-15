@@ -66,21 +66,21 @@ func (this Option) DefaultValueString() string {
 	return ""
 }
 
-func (this Option) ForceString() string {
+// func (this Option) ForceString() string {
 
-	switch this.Type.Kind() {
-	case reflect.String:
-		return fmt.Sprintf(`%v`, this.String())
-	case reflect.Int64:
-		return fmt.Sprintf(`%v`, this.Int())
-	case reflect.Float64:
-		return fmt.Sprintf(`%v`, this.Float())
-	case reflect.Bool:
-		return fmt.Sprintf(`%v`, this.Bool())
-	}
+// 	switch this.Type.Kind() {
+// 	case reflect.String:
+// 		return fmt.Sprintf(`%v`, this.String())
+// 	case reflect.Int64:
+// 		return fmt.Sprintf(`%v`, this.Int())
+// 	case reflect.Float64:
+// 		return fmt.Sprintf(`%v`, this.Float())
+// 	case reflect.Bool:
+// 		return fmt.Sprintf(`%v`, this.Bool())
+// 	}
 
-	return ""
-}
+// 	return ""
+// }
 
 type SortedOptionSlice []Option
 

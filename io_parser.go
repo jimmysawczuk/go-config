@@ -20,12 +20,17 @@ func (this *jsonConfigMap) UnmarshalJSON(in []byte) (err error) {
 func (this *jsonConfigMap) Parse() error {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("%#v\n", r)
+			fmt.Printf("Recovered from panic: %#v\n", r)
 			this.err = fmt.Errorf("%s", r)
 		}
 	}()
 
-	return parse(this.config, "")
+	err := parse(this.config, "")
+	if jerr, ok := err.(jsonConfigMapParseErrorList); ok {
+		return jerr
+	} else {
+		return err
+	}
 }
 
 type jsonConfigMapError interface {
@@ -65,7 +70,7 @@ func (this jsonConfigMapParseErrorList) Error() string {
 		strs[i] = "  " + err.Error()
 	}
 
-	return fmt.Sprintf("json parse error(s):\n%s", strings.Join(strs, ", "))
+	return fmt.Sprintf("json parse error(s): %s", strings.Join(strs, ", "))
 }
 
 func (this jsonConfigMapParseErrorList) Len() int {

@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"fmt"
@@ -53,7 +54,7 @@ func TestBasicConfigLoad(t *testing.T) {
 	// rigging the test to use our temporary config file
 	resetBaseOptionSet(false)
 	Add(String("config", filepath, "The filename of the config file to use", false))
-	Add(Bool("config-export", false, "Export the as-run configuration to a file", false))
+	Add(Bool("config-export", true, "Export the as-run configuration to a file", false))
 	Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit", false))
 
 	// setting up our config options to read the temporary config.json properly
@@ -91,4 +92,48 @@ func TestBasicConfigLoad(t *testing.T) {
 	assert.NotPanics(t, func() {
 		Usage()
 	}, "Calling Usage() shouldn't panic")
+}
+
+func TestErroredConfigLoad(t *testing.T) {
+	// writing the config.json to a temporary file
+	// all of these values aren't properly set
+	config_json := []byte(`{
+    "addend": {
+        "a": 3.33333,
+        "b": true
+    },
+    "subtract": "false",
+    "name": false
+}`)
+
+	filepath := os.TempDir() + "/go-config-basic-config.json"
+
+	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
+	if err != nil {
+		t.Errorf("Couldn't open temporary config file")
+		t.FailNow()
+	}
+
+	fp.Write(config_json)
+
+	// rigging the test to use our temporary config file
+	resetBaseOptionSet(false)
+	Add(String("config", filepath, "The filename of the config file to use", false))
+	Add(Bool("config-export", true, "Export the as-run configuration to a file", false))
+	Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit", false))
+
+	// setting up our config options to read the temporary config.json properly
+	Add(Int("addend.a", 10, "The first addend", true))
+	Add(Float("addend.b", math.Pi, "The second addend", true))
+	Add(Bool("subtract", false, "Subtract instead of add", true))
+	Add(String("name", "Basic Example", "Name of the example", true))
+
+	// and here we go!
+	os.Args = our_args
+	generic_err := Build()
+	build_err, ok := generic_err.(jsonConfigMapParseErrorList)
+	_ = ok
+
+	require.IsType(t, jsonConfigMapParseErrorList{}, build_err, true, "Build() should return a jsonConfigMapParseErrorList, instead %T", generic_err)
+	assert.Equal(t, 4, build_err.Len(), "There should be 4 build errors")
 }

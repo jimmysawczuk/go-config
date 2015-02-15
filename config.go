@@ -121,7 +121,11 @@ func Build() error {
 	file := FileIO{Filename: Require("config").String()}
 	err := file.Read()
 	if err != nil {
-		return fmt.Errorf("Error building config file: %s", err)
+		if _, ok := err.(jsonConfigMapParseErrorList); ok {
+			return err.(jsonConfigMapParseErrorList)
+		} else {
+			return fmt.Errorf("Error building config file: %s", err)
+		}
 	}
 
 	// overwrite with flag
