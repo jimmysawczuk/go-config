@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -47,3 +48,42 @@ func (this Option) Float() float64 {
 func (this Option) Int() int64 {
 	return reflect.ValueOf(this.Value).Int()
 }
+
+func (this Option) DefaultValueString() string {
+	v := this.DefaultValue.(reflect.Value)
+
+	switch this.Type.Kind() {
+	case reflect.String:
+		return fmt.Sprintf(`%v`, v.String())
+	case reflect.Int64:
+		return fmt.Sprintf(`%v`, v.Int())
+	case reflect.Float64:
+		return fmt.Sprintf(`%v`, v.Float())
+	case reflect.Bool:
+		return fmt.Sprintf(`%v`, v.Bool())
+	}
+
+	return ""
+}
+
+// func (this Option) ForceString() string {
+
+// 	switch this.Type.Kind() {
+// 	case reflect.String:
+// 		return fmt.Sprintf(`%v`, this.String())
+// 	case reflect.Int64:
+// 		return fmt.Sprintf(`%v`, this.Int())
+// 	case reflect.Float64:
+// 		return fmt.Sprintf(`%v`, this.Float())
+// 	case reflect.Bool:
+// 		return fmt.Sprintf(`%v`, this.Bool())
+// 	}
+
+// 	return ""
+// }
+
+type SortedOptionSlice []Option
+
+func (this SortedOptionSlice) Less(a, b int) bool { return this[a].Name < this[b].Name }
+func (this SortedOptionSlice) Swap(a, b int)      { this[a], this[b] = this[b], this[a] }
+func (this SortedOptionSlice) Len() int           { return len(this) }
