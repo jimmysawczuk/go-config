@@ -8,17 +8,23 @@ import (
 )
 
 var baseOptionSet OptionSet
+var configFlags *flag.FlagSet
 
 func init() {
-	resetBaseOptionSet()
-
-	Add(String("config", "config.json", "The filename of the config file to use", false))
-	Add(Bool("config-export", false, "Export the as-run configuration to a file", false))
-	Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit", false))
+	resetBaseOptionSet(true)
+	flag.Usage = func() {}
 }
 
-func resetBaseOptionSet() {
+func resetBaseOptionSet(add_defaults bool) {
 	baseOptionSet = make(OptionSet)
+
+	configFlags = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+
+	if add_defaults {
+		Add(String("config", "config.json", "The filename of the config file to use", false))
+		Add(Bool("config-export", false, "Export the as-run configuration to a file", false))
+		Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit", false))
+	}
 }
 
 // Create an Option with the parameters given of type string
@@ -33,7 +39,7 @@ func String(name string, default_value string, description string, exportable bo
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
-		flag:       flag.String(name, default_value, description),
+		flag:       configFlags.String(name, default_value, description),
 	}
 
 	return &opt
@@ -51,7 +57,7 @@ func Bool(name string, default_value bool, description string, exportable bool) 
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
-		flag:       flag.Bool(name, default_value, description),
+		flag:       configFlags.Bool(name, default_value, description),
 	}
 
 	return &opt
@@ -69,7 +75,7 @@ func Int(name string, default_value int64, description string, exportable bool) 
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
-		flag:       flag.Int64(name, default_value, description),
+		flag:       configFlags.Int64(name, default_value, description),
 	}
 
 	return &opt
@@ -87,7 +93,7 @@ func Float(name string, default_value float64, description string, exportable bo
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
-		flag:       flag.Float64(name, default_value, description),
+		flag:       configFlags.Float64(name, default_value, description),
 	}
 
 	return &opt
@@ -103,10 +109,7 @@ func Add(o *Option) {
 // set in the "config" option.
 func Build() error {
 	// parse flags
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-	flag.Usage = func() {}
-
-	parse_err := flag.CommandLine.Parse(os.Args[1:])
+	parse_err := configFlags.Parse(os.Args[1:])
 	if parse_err != flag.ErrHelp && parse_err != nil {
 		os.Exit(2)
 	}
@@ -187,8 +190,8 @@ func importFlags(visitall bool) {
 	}
 
 	if visitall {
-		flag.CommandLine.VisitAll(setter)
+		configFlags.VisitAll(setter)
 	} else {
-		flag.CommandLine.Visit(setter)
+		configFlags.Visit(setter)
 	}
 }
