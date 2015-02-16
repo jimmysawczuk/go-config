@@ -12,13 +12,13 @@ var configFlags *flag.FlagSet
 
 func init() {
 	resetBaseOptionSet(true)
-	flag.Usage = func() {}
 }
 
 func resetBaseOptionSet(add_defaults bool) {
 	baseOptionSet = make(OptionSet)
 
 	configFlags = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+	configFlags.Usage = func() {}
 
 	if add_defaults {
 		Add(String("config", "config.json", "The filename of the config file to use", false))
