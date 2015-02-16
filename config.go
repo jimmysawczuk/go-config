@@ -137,6 +137,10 @@ func Build() error {
 		return nil
 	}
 
+	// throw back args to the flag package
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	flag.CommandLine.Parse(configFlags.Args())
+
 	// export new config to file if necessary
 	if Require("config-export").Bool() || Require("config-generate").Bool() {
 		file.Write()
