@@ -27,6 +27,8 @@ func init() {
 
 	os.Args = test_args
 
+	output_writer, _ = os.OpenFile(os.DevNull, os.O_RDWR, 0700)
+
 	_ = fmt.Printf
 }
 
