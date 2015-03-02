@@ -75,7 +75,6 @@ func (f *FlagSet) parseOne() (seen bool, err error) {
 				f.args = f.unparsed[1:]
 				f.unparsed = []string{}
 			}
-
 			return false, nil
 		}
 	}
@@ -103,8 +102,8 @@ func (f *FlagSet) parseOne() (seen bool, err error) {
 	}
 
 	if option, exists := baseOptionSet[name]; exists {
+		f.unparsed = f.unparsed[1:]
 		if has_value {
-			f.unparsed = f.unparsed[1:]
 			// the option exists, and we have a value, so we can set it
 			err := option.SetFromString(value)
 			if err != nil {
@@ -113,7 +112,6 @@ func (f *FlagSet) parseOne() (seen bool, err error) {
 
 		} else if option.Type.Kind() == reflect.Bool {
 			// don't need a value, and we're not allowed to use two args, so we can set the value to true normally and continue
-			f.unparsed = f.unparsed[1:]
 			option.Value = true
 			return true, nil
 		} else {
