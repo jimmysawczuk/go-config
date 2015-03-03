@@ -5,6 +5,12 @@ import (
 	"reflect"
 )
 
+var builtInFlags map[string]bool = map[string]bool{
+	"config":          true,
+	"config-export":   true,
+	"config-generate": true,
+}
+
 type errUndefinedFlag struct {
 	name string
 }
@@ -29,8 +35,16 @@ func NewFlagSet(name string, args []string) (f FlagSet) {
 }
 
 func (f *FlagSet) Parse() error {
+	return f.parse(false)
+}
+
+func (f *FlagSet) ParseBuiltIn() error {
+	return f.parse(true)
+}
+
+func (f *FlagSet) parse(built_in_only bool) error {
 	for {
-		seen, err := f.parseOne()
+		seen, err := f.parseOne(built_in_only)
 		if seen {
 			continue
 		}
@@ -53,7 +67,7 @@ func (f *FlagSet) Parse() error {
 	return nil
 }
 
-func (f *FlagSet) parseOne() (seen bool, err error) {
+func (f *FlagSet) parseOne(built_in_only bool) (seen bool, err error) {
 	if len(f.unparsed) == 0 {
 		return false, nil
 	}
@@ -101,7 +115,22 @@ func (f *FlagSet) parseOne() (seen bool, err error) {
 		return false, nil
 	}
 
-	if option, exists := baseOptionSet[name]; exists {
+	if _, exists := builtInFlags[name]; built_in_only && !exists {
+		// we saw a valid flag, but it's not the one we're looking for, so we move on
+		f.unparsed = f.unparsed[1:]
+
+		if has_value {
+			f.notset = append(f.notset, fmt.Sprintf("-%s=%s", name, value))
+		} else if len(f.unparsed) > 0 {
+			value = f.unparsed[0]
+			f.unparsed = f.unparsed[1:]
+			f.notset = append(f.notset, fmt.Sprintf("-%s", name), fmt.Sprintf("%s", value))
+		}
+
+		return true, nil
+
+	} else if option, exists := baseOptionSet[name]; exists {
+		// valid flag, might need to find a value still
 		f.unparsed = f.unparsed[1:]
 		if has_value {
 			// the option exists, and we have a value, so we can set it
@@ -149,7 +178,7 @@ func (f *FlagSet) parseOne() (seen bool, err error) {
 	return true, nil
 }
 
-func (f FlagSet) ShowHelp() bool {
+func (f FlagSet) HasHelpFlag() bool {
 	return f.help_flag
 }
 

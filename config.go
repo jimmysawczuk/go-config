@@ -106,7 +106,7 @@ func Add(o *Option) {
 func Build() error {
 	// parse flags
 	fs := NewFlagSet(os.Args[0], os.Args[1:])
-	parse_err := fs.Parse()
+	parse_err := fs.ParseBuiltIn()
 	if parse_err != nil {
 		os.Exit(2)
 	}
@@ -128,7 +128,7 @@ func Build() error {
 		os.Exit(2)
 	}
 
-	if fs.ShowHelp() {
+	if fs.HasHelpFlag() {
 		Usage()
 		os.Exit(0)
 		return nil
@@ -172,30 +172,3 @@ func Get(key string) (*Option, error) {
 
 	return s, nil
 }
-
-// func importFlags(visitall bool) {
-// 	setter := func(f *flag.Flag) {
-// 		if v, exists := baseOptionSet.Get(f.Name); exists {
-// 			var val interface{}
-
-// 			switch v.flag.(type) {
-// 			case *string:
-// 				val = *(v.flag.(*string))
-// 			case *int64:
-// 				val = *(v.flag.(*int64))
-// 			case *float64:
-// 				val = *(v.flag.(*float64))
-// 			case *bool:
-// 				val = *(v.flag.(*bool))
-// 			}
-
-// 			v.Value = val
-// 		}
-// 	}
-
-// 	if visitall {
-// 		configFlags.VisitAll(setter)
-// 	} else {
-// 		configFlags.Visit(setter)
-// 	}
-// }
