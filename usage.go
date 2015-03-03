@@ -7,9 +7,18 @@ import (
 	"sort"
 )
 
-var output_writer io.Writer = os.Stdout
+var UsageWriter io.Writer = os.Stdout
 
 func Usage() {
+
+	uprintf := func(fmt_str string, args ...interface{}) {
+		fmt.Fprintf(UsageWriter, fmt_str, args...)
+	}
+
+	uprintln := func(fmt_str string, args ...interface{}) {
+		uprintf(fmt_str+"\n", args...)
+	}
+
 	max_len := 0
 	opts := []Option{}
 	for _, opt := range baseOptionSet {
@@ -22,11 +31,11 @@ func Usage() {
 
 	sort.Sort(SortedOptionSlice(opts))
 
-	fmt.Fprintf(output_writer, "%s\n", os.Args[0])
+	uprintln(`%s`, os.Args[0])
 
-	fmt_str := fmt.Sprintf("  -%%-%ds  %%s\n", max_len)
+	fmt_str := fmt.Sprintf(`  -%%-%ds  %%s`, max_len)
 	for _, opt := range opts {
-		fmt.Fprintf(output_writer, fmt_str,
+		uprintln(fmt_str,
 			fmt.Sprintf("%s=%s", opt.Name, opt.DefaultValueString()),
 			opt.Description,
 		)
