@@ -8,7 +8,6 @@ import (
 )
 
 var baseOptionSet OptionSet
-var configFlags *flag.FlagSet
 
 func init() {
 	resetBaseOptionSet(true)
@@ -16,9 +15,6 @@ func init() {
 
 func resetBaseOptionSet(add_defaults bool) {
 	baseOptionSet = make(OptionSet)
-
-	configFlags = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-	configFlags.Usage = func() {}
 
 	if add_defaults {
 		Add(String("config", "config.json", "The filename of the config file to use", false))
@@ -39,7 +35,7 @@ func String(name string, default_value string, description string, exportable bo
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
-		flag:       configFlags.String(name, default_value, description),
+		// flag:       configFlags.String(name, default_value, description),
 	}
 
 	return &opt
@@ -57,7 +53,7 @@ func Bool(name string, default_value bool, description string, exportable bool) 
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
-		flag:       configFlags.Bool(name, default_value, description),
+		// flag:       configFlags.Bool(name, default_value, description),
 	}
 
 	return &opt
@@ -75,7 +71,7 @@ func Int(name string, default_value int64, description string, exportable bool) 
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
-		flag:       configFlags.Int64(name, default_value, description),
+		// flag:       configFlags.Int64(name, default_value, description),
 	}
 
 	return &opt
@@ -93,7 +89,7 @@ func Float(name string, default_value float64, description string, exportable bo
 		Type:         reflect.TypeOf(default_value),
 
 		Exportable: exportable,
-		flag:       configFlags.Float64(name, default_value, description),
+		// flag:       configFlags.Float64(name, default_value, description),
 	}
 
 	return &opt
@@ -109,13 +105,11 @@ func Add(o *Option) {
 // set in the "config" option.
 func Build() error {
 	// parse flags
-	parse_err := configFlags.Parse(os.Args[1:])
-	if parse_err != flag.ErrHelp && parse_err != nil {
+	fs := NewFlagSet(os.Args[0], os.Args[1:])
+	parse_err := fs.ParseBuiltIn()
+	if parse_err != nil {
 		os.Exit(2)
 	}
-
-	// set default values
-	importFlags(true)
 
 	// determine location of config file, import it
 	file := FileIO{Filename: Require("config").String()}
@@ -128,18 +122,17 @@ func Build() error {
 		}
 	}
 
-	// overwrite with flag
-	importFlags(false)
+	fs = NewFlagSet(os.Args[0], os.Args[1:])
+	parse_err = fs.Parse()
+	if parse_err != nil {
+		os.Exit(2)
+	}
 
-	if parse_err == flag.ErrHelp {
+	if fs.HasHelpFlag() {
 		Usage()
 		os.Exit(0)
 		return nil
 	}
-
-	// throw back args to the flag package
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-	flag.CommandLine.Parse(configFlags.Args())
 
 	// export new config to file if necessary
 	if Require("config-export").Bool() || Require("config-generate").Bool() {
@@ -149,6 +142,9 @@ func Build() error {
 	if Require("config-generate").Bool() {
 		os.Exit(0)
 	}
+
+	os.Args = fs.Release()
+	flag.Parse()
 
 	return nil
 }
@@ -175,31 +171,4 @@ func Get(key string) (*Option, error) {
 	}
 
 	return s, nil
-}
-
-func importFlags(visitall bool) {
-	setter := func(f *flag.Flag) {
-		if v, exists := baseOptionSet.Get(f.Name); exists {
-			var val interface{}
-
-			switch v.flag.(type) {
-			case *string:
-				val = *(v.flag.(*string))
-			case *int64:
-				val = *(v.flag.(*int64))
-			case *float64:
-				val = *(v.flag.(*float64))
-			case *bool:
-				val = *(v.flag.(*bool))
-			}
-
-			v.Value = val
-		}
-	}
-
-	if visitall {
-		configFlags.VisitAll(setter)
-	} else {
-		configFlags.Visit(setter)
-	}
 }

@@ -35,7 +35,7 @@ func (this FileIO) Write() error {
 	return nil
 }
 
-func (this *FileIO) Read() (err error) {
+func (this FileIO) Read() (err error) {
 	fp, err := os.Open(this.Filename)
 	if err != nil {
 		if os.IsNotExist(err) {

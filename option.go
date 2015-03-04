@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 // Holds information for a configuration option
@@ -66,21 +67,36 @@ func (this Option) DefaultValueString() string {
 	return ""
 }
 
-// func (this Option) ForceString() string {
+func (this *Option) SetFromString(val string) (err error) {
+	switch this.Type.Kind() {
+	case reflect.String:
+		this.Value = val
 
-// 	switch this.Type.Kind() {
-// 	case reflect.String:
-// 		return fmt.Sprintf(`%v`, this.String())
-// 	case reflect.Int64:
-// 		return fmt.Sprintf(`%v`, this.Int())
-// 	case reflect.Float64:
-// 		return fmt.Sprintf(`%v`, this.Float())
-// 	case reflect.Bool:
-// 		return fmt.Sprintf(`%v`, this.Bool())
-// 	}
+	case reflect.Int64:
+		v, err := strconv.ParseInt(val, 0, 64)
+		if err == nil {
+			this.Value = v
+		}
 
-// 	return ""
-// }
+	case reflect.Float64:
+		v, err := strconv.ParseFloat(val, 64)
+		if err == nil {
+			this.Value = v
+		}
+
+	case reflect.Bool:
+		switch val {
+		case "1", "t", "T", "true", "TRUE", "True":
+			this.Value = true
+		case "0", "f", "F", "false", "FALSE", "False":
+			this.Value = false
+		default:
+			err = fmt.Errorf("Invalid boolean value: %s", val)
+		}
+	}
+
+	return
+}
 
 type SortedOptionSlice []Option
 
