@@ -167,9 +167,17 @@ func (f *FlagSet) parseOne(built_in_only bool) (seen bool, err error) {
 		if has_value {
 			f.notset = append(f.notset, fmt.Sprintf("-%s=%s", name, value))
 		} else if len(f.unparsed) > 0 {
-			value = f.unparsed[0]
-			f.unparsed = f.unparsed[1:]
-			f.notset = append(f.notset, fmt.Sprintf("-%s", name), fmt.Sprintf("%s", value))
+			// this isn't the last argument, but we haven't seen a value yet, so we want to check the next argument to see if it's the value
+			// for this flag
+			f.notset = append(f.notset, fmt.Sprintf("-%s", name))
+			next_arg := f.unparsed[0]
+			if next_arg[0] != '-' {
+				f.unparsed = f.unparsed[1:]
+				f.notset = append(f.notset, next_arg)
+			}
+		} else {
+			// this is the last argument, and it's a flag with no value, so we'll assume it's a boolean and pass it on through.
+			f.notset = append(f.notset, fmt.Sprintf("-%s", name))
 		}
 
 		return true, errUndefinedFlag{name: name}
