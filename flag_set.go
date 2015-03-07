@@ -22,15 +22,12 @@ type FlagSet struct {
 	unparsed []string
 	notset   []string
 
-	triggerErrorUndefined bool
-
 	help_flag bool
 }
 
 func NewFlagSet(name string, args []string) (f FlagSet) {
 	f.name = name
 	f.unparsed = args
-	f.triggerErrorUndefined = true
 	return
 }
 
@@ -45,14 +42,15 @@ func (f *FlagSet) ParseBuiltIn() error {
 func (f *FlagSet) parse(built_in_only bool) error {
 	for {
 		seen, err := f.parseOne(built_in_only)
-		if seen {
+		if seen && err == nil {
 			continue
 		}
+
 		if err == nil {
 			break
 		}
 
-		if _, ok := err.(errUndefinedFlag); ok && f.triggerErrorUndefined {
+		if _, ok := err.(errUndefinedFlag); err != nil && !ok {
 			return err
 		}
 	}

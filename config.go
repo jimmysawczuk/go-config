@@ -10,17 +10,15 @@ import (
 var baseOptionSet OptionSet
 
 func init() {
-	resetBaseOptionSet(true)
+	resetBaseOptionSet()
+	flag.Usage = func() {}
 }
 
-func resetBaseOptionSet(add_defaults bool) {
+func resetBaseOptionSet() {
 	baseOptionSet = make(OptionSet)
-
-	if add_defaults {
-		Add(String("config", "config.json", "The filename of the config file to use", false))
-		Add(Bool("config-export", false, "Export the as-run configuration to a file", false))
-		Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit", false))
-	}
+	Add(String("config", "config.json", "The filename of the config file to use", false))
+	Add(Bool("config-export", false, "Export the as-run configuration to a file", false))
+	Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit", false))
 }
 
 // Create an Option with the parameters given of type string
@@ -125,7 +123,7 @@ func Build() error {
 	fs = NewFlagSet(os.Args[0], os.Args[1:])
 	parse_err = fs.Parse()
 	if parse_err != nil {
-		os.Exit(2)
+		return parse_err
 	}
 
 	if fs.HasHelpFlag() {
@@ -144,9 +142,11 @@ func Build() error {
 	}
 
 	os.Args = fs.Release()
-	flag.Parse()
+	if len(os.Args) > 0 {
+		err = flag.CommandLine.Parse(os.Args[1:])
+	}
 
-	return nil
+	return err
 }
 
 // Requires that an Option with name key be found, otherwise panics.

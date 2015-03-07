@@ -9,9 +9,13 @@ type OptionSet map[string]*Option
 
 // Exports the OptionSet into a map that's suitable for pushing into a config.json file.
 func (os OptionSet) Export() map[string]interface{} {
+	return os.export(false)
+}
+
+func (os OptionSet) export(include_all bool) map[string]interface{} {
 	tbr := make(map[string]interface{})
 	for _, v := range os {
-		if v.Exportable {
+		if v.Exportable || include_all {
 			parts := strings.Split(v.Name, ".")
 			var i int = 0
 			var cursor *map[string]interface{} = &tbr
@@ -41,4 +45,13 @@ func (os OptionSet) Add(o Option) {
 func (os OptionSet) Get(key string) (*Option, bool) {
 	result, exists := os[key]
 	return result, exists
+}
+
+// Retrieves an Option with the Name of key. Panics if there was no key found.
+func (os OptionSet) Require(key string) *Option {
+	result, exists := os.Get(key)
+	if !exists {
+		panic("Option with name " + key + " doesn't exist")
+	}
+	return result
 }
