@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-var builtInFlags map[string]bool = map[string]bool{
+var builtInFlags = map[string]bool{
 	"config":          true,
 	"config-export":   true,
 	"config-generate": true,
@@ -15,6 +15,7 @@ type errUndefinedFlag struct {
 	name string
 }
 
+// A FlagSet is a set of Flags from the command-line
 type FlagSet struct {
 	name string
 
@@ -22,26 +23,29 @@ type FlagSet struct {
 	unparsed []string
 	notset   []string
 
-	help_flag bool
+	helpFlag bool
 }
 
+// NewFlagSet instanciates a new FlagSet with an executable named `name` and OS args `args`.
 func NewFlagSet(name string, args []string) (f FlagSet) {
 	f.name = name
 	f.unparsed = args
 	return
 }
 
+// Parse parses all the flags in the FlagSet
 func (f *FlagSet) Parse() error {
 	return f.parse(false)
 }
 
+// ParseBuiltIn parses only the built-in flags in the FlagSet (config, config-export, config-generate)
 func (f *FlagSet) ParseBuiltIn() error {
 	return f.parse(true)
 }
 
-func (f *FlagSet) parse(built_in_only bool) error {
+func (f *FlagSet) parse(builtInOnly bool) error {
 	for {
-		seen, err := f.parseOne(built_in_only)
+		seen, err := f.parseOne(builtInOnly)
 		if seen && err == nil {
 			continue
 		}
@@ -65,7 +69,7 @@ func (f *FlagSet) parse(built_in_only bool) error {
 	return nil
 }
 
-func (f *FlagSet) parseOne(built_in_only bool) (seen bool, err error) {
+func (f *FlagSet) parseOne(builtInOnly bool) (seen bool, err error) {
 	if len(f.unparsed) == 0 {
 		return false, nil
 	}
@@ -79,9 +83,9 @@ func (f *FlagSet) parseOne(built_in_only bool) (seen bool, err error) {
 		return false, nil
 	}
 
-	num_minuses := 1
+	numMinuses := 1
 	if arg[1] == '-' {
-		num_minuses++
+		numMinuses++
 		if len(arg) == 2 {
 			if len(f.unparsed) > 0 {
 				f.args = f.unparsed[1:]
@@ -91,17 +95,17 @@ func (f *FlagSet) parseOne(built_in_only bool) (seen bool, err error) {
 		}
 	}
 
-	name := arg[num_minuses:]
+	name := arg[numMinuses:]
 	if len(name) == 0 || name[0] == '-' || name[0] == '=' {
 		return false, fmt.Errorf("bad flag syntax: %s", arg)
 	}
 
-	has_value := false
+	hasValue := false
 	value := ""
 	for i := 1; i < len(name); i++ { // equals cannot be first
 		if name[i] == '=' {
 			value = name[i+1:]
-			has_value = true
+			hasValue = true
 			name = name[0:i]
 			break
 		}
@@ -109,15 +113,15 @@ func (f *FlagSet) parseOne(built_in_only bool) (seen bool, err error) {
 
 	// the help flag is special, so we'll stop parsing flags
 	if name == "help" || name == "h" {
-		f.help_flag = true
+		f.helpFlag = true
 		return false, nil
 	}
 
-	if _, exists := builtInFlags[name]; built_in_only && !exists {
+	if _, exists := builtInFlags[name]; builtInOnly && !exists {
 		// we saw a valid flag, but it's not the one we're looking for, so we move on
 		f.unparsed = f.unparsed[1:]
 
-		if has_value {
+		if hasValue {
 			f.notset = append(f.notset, fmt.Sprintf("-%s=%s", name, value))
 		} else if len(f.unparsed) > 0 {
 			value = f.unparsed[0]
@@ -130,7 +134,7 @@ func (f *FlagSet) parseOne(built_in_only bool) (seen bool, err error) {
 	} else if option, exists := baseOptionSet[name]; exists {
 		// valid flag, might need to find a value still
 		f.unparsed = f.unparsed[1:]
-		if has_value {
+		if hasValue {
 			// the option exists, and we have a value, so we can set it
 			err := option.SetFromString(value)
 			if err != nil {
@@ -143,9 +147,9 @@ func (f *FlagSet) parseOne(built_in_only bool) (seen bool, err error) {
 			return true, nil
 		} else {
 			// we need a value and don't have one yet, so we need to check the next argument
-			if !has_value && len(f.unparsed) > 0 {
+			if !hasValue && len(f.unparsed) > 0 {
 				// value is the next arg
-				has_value = true
+				hasValue = true
 				value = f.unparsed[0]
 				f.unparsed = f.unparsed[1:]
 
@@ -155,23 +159,23 @@ func (f *FlagSet) parseOne(built_in_only bool) (seen bool, err error) {
 				}
 			}
 
-			if !has_value {
+			if !hasValue {
 				return false, fmt.Errorf("flag needs an argument: -%s", name)
 			}
 		}
 	} else {
 		f.unparsed = f.unparsed[1:]
 
-		if has_value {
+		if hasValue {
 			f.notset = append(f.notset, fmt.Sprintf("-%s=%s", name, value))
 		} else if len(f.unparsed) > 0 {
 			// this isn't the last argument, but we haven't seen a value yet, so we want to check the next argument to see if it's the value
 			// for this flag
 			f.notset = append(f.notset, fmt.Sprintf("-%s", name))
-			next_arg := f.unparsed[0]
-			if next_arg[0] != '-' {
+			nextArg := f.unparsed[0]
+			if nextArg[0] != '-' {
 				f.unparsed = f.unparsed[1:]
-				f.notset = append(f.notset, next_arg)
+				f.notset = append(f.notset, nextArg)
 			}
 		} else {
 			// this is the last argument, and it's a flag with no value, so we'll assume it's a boolean and pass it on through.
@@ -184,10 +188,12 @@ func (f *FlagSet) parseOne(built_in_only bool) (seen bool, err error) {
 	return true, nil
 }
 
+// HasHelpFlag returns true if the FlagSet's args contains '-h', '-help' or something similar.
 func (f FlagSet) HasHelpFlag() bool {
-	return f.help_flag
+	return f.helpFlag
 }
 
+// Release returns the unparsed arguments and flags so they can be picked up by another library if needed (like the built-in flag package).
 func (f FlagSet) Release() []string {
 	args := []string{f.name}
 	args = append(args, f.notset...)

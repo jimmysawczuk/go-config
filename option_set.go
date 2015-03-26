@@ -4,21 +4,21 @@ import (
 	"strings"
 )
 
-// A map of Options, keyed by the Options' Names.
+// An OptionSet is map of Options, keyed by the Options' Names.
 type OptionSet map[string]*Option
 
-// Exports the OptionSet into a map that's suitable for pushing into a config.json file.
+// Export returns a map that's suitable for pushing into a config.json file.
 func (os OptionSet) Export() map[string]interface{} {
 	return os.export(false)
 }
 
-func (os OptionSet) export(include_all bool) map[string]interface{} {
+func (os OptionSet) export(includeAll bool) map[string]interface{} {
 	tbr := make(map[string]interface{})
 	for _, v := range os {
-		if v.Exportable || include_all {
+		if v.Exportable || includeAll {
 			parts := strings.Split(v.Name, ".")
-			var i int = 0
-			var cursor *map[string]interface{} = &tbr
+			var i int
+			var cursor = &tbr
 
 			for i < len(parts)-1 {
 
@@ -37,17 +37,18 @@ func (os OptionSet) export(include_all bool) map[string]interface{} {
 	return tbr
 }
 
+// Add adds an Option to an OptionSet with a key of the Option's name.
 func (os OptionSet) Add(o Option) {
 	os[o.Name] = &o
 }
 
-// Retrieves an Option with the Name of key, and a boolean to determine if it was found or not.
+// Get retrieves an Option with the Name of key, and a boolean to determine if it was found or not.
 func (os OptionSet) Get(key string) (*Option, bool) {
 	result, exists := os[key]
 	return result, exists
 }
 
-// Retrieves an Option with the Name of key. Panics if there was no key found.
+// Require retrieves an Option with the Name of key. Panics if there was no key found.
 func (os OptionSet) Require(key string) *Option {
 	result, exists := os.Get(key)
 	if !exists {

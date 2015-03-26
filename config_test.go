@@ -35,7 +35,7 @@ func resetArgs() {
 
 func TestBasicConfigLoad(t *testing.T) {
 	// writing the config.json to a temporary file
-	config_json := []byte(`{
+	configJSON := []byte(`{
     "addend": {
         "a": 10,
         "b": 3.8
@@ -52,7 +52,7 @@ func TestBasicConfigLoad(t *testing.T) {
 		t.FailNow()
 	}
 
-	fp.Write(config_json)
+	fp.Write(configJSON)
 	fp.Close()
 
 	// rigging the test to use our temporary config file
@@ -100,7 +100,7 @@ func TestBasicConfigLoad(t *testing.T) {
 func TestErroredConfigLoad(t *testing.T) {
 	// writing the config.json to a temporary file
 	// all of these values aren't properly set
-	config_json := []byte(`{
+	configJSON := []byte(`{
     "addend": {
         "a": 3.33333,
         "b": true
@@ -117,7 +117,7 @@ func TestErroredConfigLoad(t *testing.T) {
 		t.FailNow()
 	}
 
-	fp.Write(config_json)
+	fp.Write(configJSON)
 	fp.Close()
 
 	// rigging the test to use our temporary config file
@@ -133,17 +133,17 @@ func TestErroredConfigLoad(t *testing.T) {
 	resetArgs()
 
 	// and here we go!
-	generic_err := Build()
-	build_err, ok := generic_err.(jsonConfigMapParseErrorList)
+	genericErr := Build()
+	buildErr, ok := genericErr.(jsonConfigMapParseErrorList)
 	_ = ok
 
-	require.IsType(t, jsonConfigMapParseErrorList{}, build_err, true, "Build() should return a jsonConfigMapParseErrorList, instead %T", generic_err)
-	assert.Equal(t, 4, build_err.Len(), "There should be 4 build errors")
+	require.IsType(t, jsonConfigMapParseErrorList{}, buildErr, true, "Build() should return a jsonConfigMapParseErrorList, instead %T", genericErr)
+	assert.Equal(t, 4, buildErr.Len(), "There should be 4 build errors")
 }
 
 func TestBasicConfigLoadWithFlags(t *testing.T) {
 	// writing the config.json to a temporary file
-	config_json := []byte(`{
+	configJSON := []byte(`{
     "addend": {
         "a": 10,
         "b": 3.8
@@ -160,7 +160,7 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
 		t.FailNow()
 	}
 
-	fp.Write(config_json)
+	fp.Write(configJSON)
 	fp.Close()
 
 	// rigging the test to use our temporary config file
@@ -212,7 +212,7 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
 
 func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
 	// writing the config.json to a temporary file
-	config_json := []byte(`{
+	configJSON := []byte(`{
     "addend": {
         "a": 10,
         "b": 3.8
@@ -229,7 +229,7 @@ func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
 		t.FailNow()
 	}
 
-	fp.Write(config_json)
+	fp.Write(configJSON)
 	fp.Close()
 
 	// rigging the test to use our temporary config file
@@ -287,7 +287,7 @@ func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
 
 func TestBasicConfigLoadWithFinalBooleanFlag(t *testing.T) {
 	// writing the config.json to a temporary file
-	config_json := []byte(`{
+	configJSON := []byte(`{
     "addend": {
         "a": 10,
         "b": 3.8
@@ -304,7 +304,7 @@ func TestBasicConfigLoadWithFinalBooleanFlag(t *testing.T) {
 		t.FailNow()
 	}
 
-	fp.Write(config_json)
+	fp.Write(configJSON)
 	fp.Close()
 
 	// rigging the test to use our temporary config file
@@ -361,7 +361,7 @@ func TestBasicConfigLoadWithFinalBooleanFlag(t *testing.T) {
 
 func TestBasicConfigLoadWithUndefinedFlags(t *testing.T) {
 	// writing the config.json to a temporary file
-	config_json := []byte(`{
+	configJSON := []byte(`{
     "addend": {
         "a": 10,
         "b": 3.8
@@ -378,7 +378,7 @@ func TestBasicConfigLoadWithUndefinedFlags(t *testing.T) {
 		t.FailNow()
 	}
 
-	fp.Write(config_json)
+	fp.Write(configJSON)
 	fp.Close()
 
 	// rigging the test to use our temporary config file
@@ -432,7 +432,7 @@ func TestBasicConfigLoadWithUndefinedFlags(t *testing.T) {
 
 func TestBasicConfigWrite(t *testing.T) {
 	// writing the config.json to a temporary file
-	config_json := []byte(`{
+	configJSON := []byte(`{
     "addend": {
         "a": 10,
         "b": 3.8
@@ -441,7 +441,7 @@ func TestBasicConfigWrite(t *testing.T) {
     "name": "Basic Example"
 }`)
 
-	new_config_json := []byte(`{
+	newConfigJSON := []byte(`{
     "addend": {
         "a": 15,
         "b": 15
@@ -458,7 +458,7 @@ func TestBasicConfigWrite(t *testing.T) {
 		t.FailNow()
 	}
 
-	fp.Write(config_json)
+	fp.Write(configJSON)
 	fp.Close()
 
 	// rigging the test to use our temporary config file
@@ -502,9 +502,9 @@ func TestBasicConfigWrite(t *testing.T) {
 
 	Build()
 
-	built_json, _ := json.Marshal(baseOptionSet.Export())
+	builtJSON, _ := json.Marshal(baseOptionSet.Export())
 	buf := bytes.Buffer{}
-	json.Compact(&buf, new_config_json)
+	json.Compact(&buf, newConfigJSON)
 
-	assert.Equal(t, buf.String(), string(built_json), "Written config file should match expected")
+	assert.Equal(t, buf.String(), string(builtJSON), "Written config file should match expected")
 }

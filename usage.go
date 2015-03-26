@@ -7,35 +7,37 @@ import (
 	"sort"
 )
 
+// UsageWriter is the io.Writer to use for outputting Usage(). Defaults to stdout.
 var UsageWriter io.Writer = os.Stdout
 
+// Usage prints the help information to UsageWriter (defaults to stdout).
 func Usage() {
 
-	uprintf := func(fmt_str string, args ...interface{}) {
-		fmt.Fprintf(UsageWriter, fmt_str, args...)
+	uprintf := func(strFmt string, args ...interface{}) {
+		fmt.Fprintf(UsageWriter, strFmt, args...)
 	}
 
-	uprintln := func(fmt_str string, args ...interface{}) {
-		uprintf(fmt_str+"\n", args...)
+	uprintln := func(strFmt string, args ...interface{}) {
+		uprintf(strFmt+"\n", args...)
 	}
 
-	max_len := 0
+	mlen := 0
 	opts := []Option{}
 	for _, opt := range baseOptionSet {
 		opts = append(opts, *opt)
 		s := fmt.Sprintf("%s=%s", opt.Name, opt.DefaultValueString())
-		if len(s) > max_len {
-			max_len = len(s)
+		if len(s) > mlen {
+			mlen = len(s)
 		}
 	}
 
-	sort.Sort(SortedOptionSlice(opts))
+	sort.Sort(sortedOptionSlice(opts))
 
 	uprintln(`%s`, os.Args[0])
 
-	fmt_str := fmt.Sprintf(`  -%%-%ds  %%s`, max_len)
+	fmtStr := fmt.Sprintf(`  -%%-%ds  %%s`, mlen)
 	for _, opt := range opts {
-		uprintln(fmt_str,
+		uprintln(fmtStr,
 			fmt.Sprintf("%s=%s", opt.Name, opt.DefaultValueString()),
 			opt.Description,
 		)

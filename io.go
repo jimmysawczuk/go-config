@@ -6,22 +6,24 @@ import (
 	"os"
 )
 
+// IO defines an interface that allows reading and writing of OptionSets to external storage
 type IO interface {
 	Read() (map[string]interface{}, error)
 	Write() error
 }
 
+// FileIO implements IO and writes to the filesystem
 type FileIO struct {
 	Filename string
 }
 
-func (this FileIO) Write() error {
+func (f FileIO) Write() error {
 	json, err := json.MarshalIndent(baseOptionSet.Export(), "", "    ")
 	if err != nil {
 		return fmt.Errorf("go-config: error marshaling config: %s", err)
 	}
 
-	fp, err := os.OpenFile(this.Filename, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0666)
+	fp, err := os.OpenFile(f.Filename, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0666)
 	if err != nil {
 		return fmt.Errorf("go-config: file i/o open error: %s", err)
 	}
@@ -35,8 +37,8 @@ func (this FileIO) Write() error {
 	return nil
 }
 
-func (this FileIO) Read() (err error) {
-	fp, err := os.Open(this.Filename)
+func (f FileIO) Read() (err error) {
+	fp, err := os.Open(f.Filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -59,13 +61,13 @@ func (this FileIO) Read() (err error) {
 		return fmt.Errorf("go-config: file i/o read error: %s", err)
 	}
 
-	j_map := jsonConfigMap{}
-	err = json.Unmarshal(by, &j_map)
+	jmap := jsonConfigMap{}
+	err = json.Unmarshal(by, &jmap)
 	if err != nil {
 		return fmt.Errorf("go-config: json unmarshal error: %s", err)
 	}
 
-	err = j_map.Parse()
+	err = jmap.Parse()
 	if err != nil {
 		return err
 	}

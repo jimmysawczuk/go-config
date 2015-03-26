@@ -13,24 +13,23 @@ type jsonConfigMap struct {
 	err    error
 }
 
-func (this *jsonConfigMap) UnmarshalJSON(in []byte) (err error) {
-	return json.Unmarshal(in, &this.config)
+func (j *jsonConfigMap) UnmarshalJSON(in []byte) (err error) {
+	return json.Unmarshal(in, &j.config)
 }
 
-func (this *jsonConfigMap) Parse() error {
+func (j *jsonConfigMap) Parse() error {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("Recovered from panic: %#v\n", r)
-			this.err = fmt.Errorf("%s", r)
+			j.err = fmt.Errorf("%s", r)
 		}
 	}()
 
-	err := parse(this.config, "")
+	err := parse(j.config, "")
 	if jerr, ok := err.(jsonConfigMapParseErrorList); ok {
 		return jerr
-	} else {
-		return err
 	}
+	return err
 }
 
 type jsonConfigMapError interface {
@@ -43,8 +42,8 @@ type jsonConfigMapParseError struct {
 	expected reflect.Kind
 }
 
-func (this jsonConfigMapParseError) Error() string {
-	return fmt.Sprintf("unexpected type: %q: expected %s, got %s", this.key, this.expected, this.got)
+func (j jsonConfigMapParseError) Error() string {
+	return fmt.Sprintf("unexpected type: %q: expected %s, got %s", j.key, j.expected, j.got)
 }
 
 type jsonConfigMapTruncateError struct {
@@ -54,27 +53,27 @@ type jsonConfigMapTruncateError struct {
 	difference float64
 }
 
-func (this jsonConfigMapTruncateError) Error() string {
-	return fmt.Sprintf("possible truncate: %q: expected %s, got %s; difference: %e", this.key, this.expected, this.got, this.difference)
+func (j jsonConfigMapTruncateError) Error() string {
+	return fmt.Sprintf("possible truncate: %q: expected %s, got %s; difference: %e", j.key, j.expected, j.got, j.difference)
 }
 
 type jsonConfigMapParseErrorList []jsonConfigMapError
 
-func (this *jsonConfigMapParseErrorList) Merge(inc jsonConfigMapParseErrorList) {
-	*this = append(*this, inc...)
+func (j *jsonConfigMapParseErrorList) Merge(inc jsonConfigMapParseErrorList) {
+	*j = append(*j, inc...)
 }
 
-func (this jsonConfigMapParseErrorList) Error() string {
-	strs := make([]string, len(this))
-	for i, err := range this {
+func (j jsonConfigMapParseErrorList) Error() string {
+	strs := make([]string, len(j))
+	for i, err := range j {
 		strs[i] = "  " + err.Error()
 	}
 
 	return fmt.Sprintf("json parse error(s): %s", strings.Join(strs, ", "))
 }
 
-func (this jsonConfigMapParseErrorList) Len() int {
-	return len(this)
+func (j jsonConfigMapParseErrorList) Len() int {
+	return len(j)
 }
 
 func parse(configMap map[string]interface{}, prefix string) (err error) {
@@ -134,8 +133,8 @@ func parse(configMap map[string]interface{}, prefix string) (err error) {
 			case map[string]interface{}:
 				cerr := parse(v.(map[string]interface{}), k+".")
 				if cerr != nil {
-					if child_errs, ok := cerr.(jsonConfigMapParseErrorList); ok {
-						errs.Merge(child_errs)
+					if childerrs, ok := cerr.(jsonConfigMapParseErrorList); ok {
+						errs.Merge(childerrs)
 					}
 				}
 			}

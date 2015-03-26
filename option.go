@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-// Holds information for a configuration option
+// Option holds information for a configuration option
 type Option struct {
 	// The name of the option is what's used to reference the option and its value during the program
 	Name string
@@ -30,30 +30,31 @@ type Option struct {
 	flag interface{}
 }
 
-// Returns the string value of the option. Will panic if it's not a string.
-func (this Option) String() string {
-	return reflect.ValueOf(this.Value).String()
+// String returns the string value of the option. Will panic if the Option's type is not a string.
+func (o Option) String() string {
+	return reflect.ValueOf(o.Value).String()
 }
 
-// Returns the bool value of the option. Will panic if it's not a bool.
-func (this Option) Bool() bool {
-	return reflect.ValueOf(this.Value).Bool()
+// Bool returns the bool value of the option. Will panic if the Option's type is not a bool.
+func (o Option) Bool() bool {
+	return reflect.ValueOf(o.Value).Bool()
 }
 
-// Returns the float64 value of the option. Will panic if it's not a float64.
-func (this Option) Float() float64 {
-	return reflect.ValueOf(this.Value).Float()
+// Float returns the float64 value of the option. Will panic if the Option's type is not a float64.
+func (o Option) Float() float64 {
+	return reflect.ValueOf(o.Value).Float()
 }
 
-// Returns the int64 value of the option. Will panic if it's not an int64.
-func (this Option) Int() int64 {
-	return reflect.ValueOf(this.Value).Int()
+// Int returns the int64 value of the option. Will panic if the Option's type not an int64.
+func (o Option) Int() int64 {
+	return reflect.ValueOf(o.Value).Int()
 }
 
-func (this Option) DefaultValueString() string {
-	v := this.DefaultValue.(reflect.Value)
+// DefaultValueString returns the Option's default value as a string
+func (o Option) DefaultValueString() string {
+	v := o.DefaultValue.(reflect.Value)
 
-	switch this.Type.Kind() {
+	switch o.Type.Kind() {
 	case reflect.String:
 		return fmt.Sprintf(`%v`, v.String())
 	case reflect.Int64:
@@ -67,29 +68,30 @@ func (this Option) DefaultValueString() string {
 	return ""
 }
 
-func (this *Option) SetFromString(val string) (err error) {
-	switch this.Type.Kind() {
+// SetFromString attempts to set the Option's value as its proper type by parsing the string argument
+func (o *Option) SetFromString(val string) (err error) {
+	switch o.Type.Kind() {
 	case reflect.String:
-		this.Value = val
+		o.Value = val
 
 	case reflect.Int64:
 		v, err := strconv.ParseInt(val, 0, 64)
 		if err == nil {
-			this.Value = v
+			o.Value = v
 		}
 
 	case reflect.Float64:
 		v, err := strconv.ParseFloat(val, 64)
 		if err == nil {
-			this.Value = v
+			o.Value = v
 		}
 
 	case reflect.Bool:
 		switch val {
 		case "1", "t", "T", "true", "TRUE", "True":
-			this.Value = true
+			o.Value = true
 		case "0", "f", "F", "false", "FALSE", "False":
-			this.Value = false
+			o.Value = false
 		default:
 			err = fmt.Errorf("Invalid boolean value: %s", val)
 		}
@@ -98,8 +100,8 @@ func (this *Option) SetFromString(val string) (err error) {
 	return
 }
 
-type SortedOptionSlice []Option
+type sortedOptionSlice []Option
 
-func (this SortedOptionSlice) Less(a, b int) bool { return this[a].Name < this[b].Name }
-func (this SortedOptionSlice) Swap(a, b int)      { this[a], this[b] = this[b], this[a] }
-func (this SortedOptionSlice) Len() int           { return len(this) }
+func (s sortedOptionSlice) Less(a, b int) bool { return s[a].Name < s[b].Name }
+func (s sortedOptionSlice) Swap(a, b int)      { s[a], s[b] = s[b], s[a] }
+func (s sortedOptionSlice) Len() int           { return len(s) }
