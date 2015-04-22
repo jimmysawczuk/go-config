@@ -71,7 +71,7 @@ func TestBasicConfigLoad(t *testing.T) {
 	Build()
 
 	a := Require("addend.a").Int()
-	assert.Equal(t, a, 10, "addend.a should be 10")
+	assert.Equal(t, a, int64(10), "addend.a should be 10")
 
 	b := Require("addend.b").Float()
 	assert.Equal(t, b, 3.8, "addend.b should be 3.8")
@@ -184,16 +184,16 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
 	Build()
 
 	a := Require("addend.a").Int()
-	assert.Equal(t, a, 4, "addend.a should be 4")
+	assert.Equal(t, a, int64(4), "addend.a should be 4")
 
 	b := Require("addend.b").Float()
-	assert.Equal(t, b, 4, "addend.b should be 4")
+	assert.Equal(t, b, float64(4), "addend.b should be 4")
 
 	sub := Require("subtract").Bool()
 	assert.Equal(t, sub, false, "subtract should be false")
 
 	c := float64(a) + float64(b)
-	assert.Equal(t, c, 4+4, "The operation on addend.a + addend.b should be 8")
+	assert.Equal(t, c, float64(4+4), "The operation on addend.a + addend.b should be 8")
 
 	name := Require("name").String()
 	assert.Equal(t, name, "Flag override", "Name should be \"Flag override\"")
@@ -259,16 +259,16 @@ func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
 	Build()
 
 	a := Require("addend.a").Int()
-	assert.Equal(t, a, 4, "addend.a should be 4")
+	assert.Equal(t, a, int64(4), "addend.a should be 4")
 
 	b := Require("addend.b").Float()
-	assert.Equal(t, b, 2, "addend.b should be 2")
+	assert.Equal(t, b, float64(2), "addend.b should be 2")
 
 	sub := Require("subtract").Bool()
 	assert.Equal(t, sub, true, "subtract should be true")
 
 	c := float64(a) - float64(b)
-	assert.Equal(t, c, 4-2, "The operation on addend.a - addend.b should be 2")
+	assert.Equal(t, c, float64(4-2), "The operation on addend.a - addend.b should be 2")
 
 	name := Require("name").String()
 	assert.Equal(t, name, "Test", "Name should be \"Test\"")
@@ -333,16 +333,16 @@ func TestBasicConfigLoadWithFinalBooleanFlag(t *testing.T) {
 	Build()
 
 	a := Require("addend.a").Int()
-	assert.Equal(t, a, 4, "addend.a should be 4")
+	assert.Equal(t, a, int64(4), "addend.a should be 4")
 
 	b := Require("addend.b").Float()
-	assert.Equal(t, b, 2, "addend.b should be 2")
+	assert.Equal(t, b, float64(2), "addend.b should be 2")
 
 	sub := Require("subtract").Bool()
 	assert.Equal(t, sub, true, "subtract should be true")
 
 	c := float64(a) - float64(b)
-	assert.Equal(t, c, 4-2, "The operation on addend.a - addend.b should be 2")
+	assert.Equal(t, c, float64(4-2), "The operation on addend.a - addend.b should be 2")
 
 	name := Require("name").String()
 	assert.Equal(t, name, "Test", "Name should be \"Test\"")
