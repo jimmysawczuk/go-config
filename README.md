@@ -1,6 +1,6 @@
 # go-config
 
-[ ![travis-ci status for jimmysawczuk/go-config](https://travis-ci.org/jimmysawczuk/go-config.svg)](https://travis-ci.org/jimmysawczuk/go-config)
+[ ![travis-ci status for jimmysawczuk/go-config](https://travis-ci.org/jimmysawczuk/go-config.svg)](https://travis-ci.org/jimmysawczuk/go-config) [![GoDoc](https://godoc.org/github.com/jimmysawczuk/go-config?status.svg)](https://godoc.org/github.com/jimmysawczuk/go-config)
 
 **go-config** is a configuration library for Go that can process configuration from the source code itself, config files, and the command line.
 
