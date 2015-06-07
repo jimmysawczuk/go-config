@@ -58,6 +58,7 @@ func (os OptionSet) Require(key string) *Option {
 	return result
 }
 
+// Validate checks all Options in an OptionSet and returns an error if any of them don't pass any of their Filters and are Required.
 func (os OptionSet) Validate() error {
 	hasError := false
 	invalidOpts := []string{}
@@ -70,7 +71,7 @@ func (os OptionSet) Validate() error {
 			if !validOption {
 				invalidOpts = append(invalidOpts, v.Name)
 			}
-			hasError = hasError && validOption
+			hasError = hasError || !validOption
 		}
 	}
 

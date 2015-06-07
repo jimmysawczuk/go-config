@@ -97,6 +97,76 @@ func TestBasicConfigLoad(t *testing.T) {
 	}, "Calling Usage() shouldn't panic")
 }
 
+func TestRequiredConfigLoad(t *testing.T) {
+	// writing the config.json to a temporary file
+	configJSON := []byte(`{
+    "addend": {
+        "a": 10,
+        "b": 3.8
+    },
+    "subtract": false,
+    "param-1": "",
+    "param-2": "provided"
+}`)
+
+	filepath := os.TempDir() + "/go-config-required-config.json"
+
+	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
+	if err != nil {
+		t.Errorf("Couldn't open temporary config file")
+		t.FailNow()
+	}
+
+	fp.Write(configJSON)
+	fp.Close()
+
+	// rigging the test to use our temporary config file
+	resetBaseOptionSet()
+	baseOptionSet.Require("config").SetFromString(filepath)
+
+	// setting up our config options to read the temporary config.json properly
+	Add(Int("addend.a", 10, "The first addend", Exportable))
+	Add(Float("addend.b", math.Pi, "The second addend", Exportable))
+	Add(Bool("subtract", false, "Subtract instead of add", Exportable))
+	Add(String("param-1", "Value 1", "Name of the example", Exportable|Required))
+	Add(String("param-2", "Value 2", "", Exportable|Required))
+
+	resetArgs()
+
+	// and here we go!
+	err = Build()
+	assert.NotNil(t, err, "There should be an error")
+
+	a := Require("addend.a").Int()
+	assert.Equal(t, a, int64(10), "addend.a should be 10")
+
+	b := Require("addend.b").Float()
+	assert.Equal(t, b, 3.8, "addend.b should be 3.8")
+
+	sub := Require("subtract").Bool()
+	assert.Equal(t, sub, false, "subtract should be false")
+
+	c := float64(a) + float64(b)
+	assert.Equal(t, c, 10+3.8, "The operation on addend.a + addend.b should be 13.8")
+
+	param1 := Require("param-1").String()
+	assert.Equal(t, param1, "", "Name should be \"\" (invalid, but it should still parse)")
+
+	param2 := Require("param-2").String()
+	assert.Equal(t, param2, "provided", "Name should be \"provided\"")
+
+	_, err = Get("invalid-parameter")
+	assert.NotEqual(t, err, nil, "Get(\"invalid-parameter\") should return an error")
+
+	assert.Panics(t, func() {
+		_ = Require("invalid-parameter")
+	}, "Calling Require(\"invalid-parameter\") should panic")
+
+	assert.NotPanics(t, func() {
+		Usage()
+	}, "Calling Usage() shouldn't panic")
+}
+
 func TestErroredConfigLoad(t *testing.T) {
 	// writing the config.json to a temporary file
 	// all of these values aren't properly set
@@ -168,10 +238,10 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend", Exportable|Required))
-	Add(Float("addend.b", math.Pi, "The second addend", Exportable|Required))
-	Add(Bool("subtract", false, "Subtract instead of add", Exportable|Required))
-	Add(String("name", "Basic Example", "Name of the example", Exportable|Required))
+	Add(Int("addend.a", 10, "The first addend", Exportable))
+	Add(Float("addend.b", math.Pi, "The second addend", Exportable))
+	Add(Bool("subtract", false, "Subtract instead of add", Exportable))
+	Add(String("name", "Basic Example", "Name of the example", Exportable))
 
 	// and here we go!
 	os.Args = []string{
@@ -507,4 +577,9 @@ func TestBasicConfigWrite(t *testing.T) {
 	json.Compact(&buf, newConfigJSON)
 
 	assert.Equal(t, buf.String(), string(builtJSON), "Written config file should match expected")
+}
+
+func TestConstants(t *testing.T) {
+	assert.Equal(t, Exportable, 1, "Exportable should be 1")
+	assert.Equal(t, Required, 2, "Required should be 2")
 }

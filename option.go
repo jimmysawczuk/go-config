@@ -6,9 +6,16 @@ import (
 	"strconv"
 )
 
+// OptionMask is a type for setting ConfigOptions on Options
+type OptionMask int
+
 const (
-	_ int = iota
+	_ OptionMask = iota
+
+	// Exportable means the Option will be exported to a config.json file
 	Exportable
+
+	// Required means the Option is required and all of the Filters will be tested
 	Required
 )
 
@@ -30,18 +37,19 @@ type Option struct {
 	Type reflect.Type
 
 	// Extra options
-	Options ConfigOption
+	Options OptionMeta
 }
 
-type ConfigOption struct {
+// OptionMeta holds information for configuring options on Options
+type OptionMeta struct {
 	// Exportable is true if the option is exportable to a config.json file
 	Exportable bool
 
 	// Required is true if the option is required
 	Required bool
 
-	// If Required is true, all of these filters must pass for the Option to be valid
-	Filters []func(value interface{}) bool
+	// Filters is a set of boolean functions that are tested with the given value. If Required is true, all of these must succeed.
+	Filters []func(option *Option) bool
 }
 
 // String returns the string value of the option. Will panic if the Option's type is not a string.
@@ -120,28 +128,20 @@ func (s sortedOptionSlice) Less(a, b int) bool { return s[a].Name < s[b].Name }
 func (s sortedOptionSlice) Swap(a, b int)      { s[a], s[b] = s[b], s[a] }
 func (s sortedOptionSlice) Len() int           { return len(s) }
 
-var defaultConfigOption = ConfigOption{
-	Exportable: false,
-	Required:   false,
-	Filters: []func(interface{}) bool{
-		func(v interface{}) bool {
-			val := reflect.ValueOf(v)
-			ty := reflect.TypeOf(v)
-
-			return val != reflect.Zero(ty)
-		},
-	},
-}
-
-func DefaultConfigOption() ConfigOption {
-	s := defaultConfigOption
+// DefaultOptionMeta returns the default OptionMeta object
+func DefaultOptionMeta() OptionMeta {
+	s := OptionMeta{
+		Exportable: false,
+		Required:   false,
+		Filters:    []func(*Option) bool{},
+	}
 	return s
 }
 
-func ConfigOptionFromMask(opt_mask int) ConfigOption {
-	s := defaultConfigOption
-	s.Exportable = opt_mask%2 == 1
-	s.Required = (opt_mask>>1)%2 == 1
+func getOptionMetaFromMask(optMask OptionMask) OptionMeta {
+	s := DefaultOptionMeta()
+	s.Exportable = optMask%2 == 1
+	s.Required = (optMask>>1)%2 == 1
 
 	// fmt.Printf("exportable %t required %t\n", s.Exportable, s.Required)
 

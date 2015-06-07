@@ -27,8 +27,15 @@ func DefaultString(name, defaultValue string, description string) *Option {
 }
 
 // String creates an Option with the parameters given of type string
-func String(name string, defaultValue string, description string, opt_mask int) *Option {
-	opt := Option{
+func String(name string, defaultValue string, description string, optMask OptionMask) *Option {
+
+	opt := getOptionMetaFromMask(optMask)
+	opt.Filters = append(opt.Filters, func(v *Option) bool {
+		s := v.String()
+		return s != ""
+	})
+
+	v := Option{
 		Name:        name,
 		Description: description,
 
@@ -36,10 +43,10 @@ func String(name string, defaultValue string, description string, opt_mask int) 
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Options: ConfigOptionFromMask(opt_mask),
+		Options: opt,
 	}
 
-	return &opt
+	return &v
 }
 
 // DefaultBool creates an Option with the parameters given of type bool and default options
@@ -48,8 +55,8 @@ func DefaultBool(name string, defaultValue bool, description string) *Option {
 }
 
 // Bool creates an Option with the parameters given of type bool
-func Bool(name string, defaultValue bool, description string, opt_mask int) *Option {
-	opt := Option{
+func Bool(name string, defaultValue bool, description string, optMask OptionMask) *Option {
+	v := Option{
 		Name:        name,
 		Description: description,
 
@@ -57,10 +64,10 @@ func Bool(name string, defaultValue bool, description string, opt_mask int) *Opt
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Options: ConfigOptionFromMask(opt_mask),
+		Options: getOptionMetaFromMask(optMask),
 	}
 
-	return &opt
+	return &v
 }
 
 // DefaultInt creates an Option with the parameters given of type int64 and default options
@@ -69,8 +76,8 @@ func DefaultInt(name string, defaultValue int64, description string) *Option {
 }
 
 // Int creates an Option with the parameters given of type int64
-func Int(name string, defaultValue int64, description string, opt_mask int) *Option {
-	opt := Option{
+func Int(name string, defaultValue int64, description string, optMask OptionMask) *Option {
+	v := Option{
 		Name:        name,
 		Description: description,
 
@@ -78,10 +85,10 @@ func Int(name string, defaultValue int64, description string, opt_mask int) *Opt
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Options: ConfigOptionFromMask(opt_mask),
+		Options: getOptionMetaFromMask(optMask),
 	}
 
-	return &opt
+	return &v
 }
 
 // DefaultFloat creates an Option with the parameters given of type float64 and default options
@@ -90,8 +97,8 @@ func DefaultFloat(name string, defaultValue float64, description string) *Option
 }
 
 // Float creates an Option with the parameters given of type float64
-func Float(name string, defaultValue float64, description string, opt_mask int) *Option {
-	opt := Option{
+func Float(name string, defaultValue float64, description string, optMask OptionMask) *Option {
+	v := Option{
 		Name:        name,
 		Description: description,
 
@@ -99,10 +106,10 @@ func Float(name string, defaultValue float64, description string, opt_mask int) 
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Options: ConfigOptionFromMask(opt_mask),
+		Options: getOptionMetaFromMask(optMask),
 	}
 
-	return &opt
+	return &v
 }
 
 // Add adds an Option to the config's OptionSet
