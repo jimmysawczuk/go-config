@@ -6,6 +6,12 @@ import (
 	"strconv"
 )
 
+const (
+	_ int = iota
+	Exportable
+	Required
+)
+
 // Option holds information for a configuration option
 type Option struct {
 	// The name of the option is what's used to reference the option and its value during the program
@@ -14,7 +20,7 @@ type Option struct {
 	// What the option is for. This also shows up when invoking `program --help`.
 	Description string
 
-	// Holds the value contained by this option
+	// Holds the actual value contained by this option
 	Value interface{}
 
 	// Holds the default value for this option
@@ -23,11 +29,19 @@ type Option struct {
 	// Holds the type of this option
 	Type reflect.Type
 
-	// If true, this option is exportable to a config.json file if generated.
+	// Extra options
+	Options ConfigOption
+}
+
+type ConfigOption struct {
+	// Exportable is true if the option is exportable to a config.json file
 	Exportable bool
 
-	// A pointer to the flag value to set this option from the command line.
-	flag interface{}
+	// Required is true if the option is required
+	Required bool
+
+	// If Required is true, all of these filters must pass for the Option to be valid
+	Filters []func(value interface{}) bool
 }
 
 // String returns the string value of the option. Will panic if the Option's type is not a string.
@@ -105,3 +119,31 @@ type sortedOptionSlice []Option
 func (s sortedOptionSlice) Less(a, b int) bool { return s[a].Name < s[b].Name }
 func (s sortedOptionSlice) Swap(a, b int)      { s[a], s[b] = s[b], s[a] }
 func (s sortedOptionSlice) Len() int           { return len(s) }
+
+var defaultConfigOption = ConfigOption{
+	Exportable: false,
+	Required:   false,
+	Filters: []func(interface{}) bool{
+		func(v interface{}) bool {
+			val := reflect.ValueOf(v)
+			ty := reflect.TypeOf(v)
+
+			return val != reflect.Zero(ty)
+		},
+	},
+}
+
+func DefaultConfigOption() ConfigOption {
+	s := defaultConfigOption
+	return s
+}
+
+func ConfigOptionFromMask(opt_mask int) ConfigOption {
+	s := defaultConfigOption
+	s.Exportable = opt_mask%2 == 1
+	s.Required = (opt_mask>>1)%2 == 1
+
+	// fmt.Printf("exportable %t required %t\n", s.Exportable, s.Required)
+
+	return s
+}

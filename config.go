@@ -16,14 +16,18 @@ func init() {
 
 func resetBaseOptionSet() {
 	baseOptionSet = make(OptionSet)
-	Add(String("config", "config.json", "The filename of the config file to use", false))
-	Add(Bool("config-export", false, "Export the as-run configuration to a file", false))
-	Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit", false))
+	Add(DefaultString("config", "config.json", "The filename of the config file to use"))
+	Add(DefaultBool("config-export", false, "Export the as-run configuration to a file"))
+	Add(DefaultBool("config-generate", false, "Export the as-run configuration to a file, then exit"))
+}
+
+// DefaultString creates an Option with the parameters given of type string and default options
+func DefaultString(name, defaultValue string, description string) *Option {
+	return String(name, defaultValue, description, 0)
 }
 
 // String creates an Option with the parameters given of type string
-func String(name string, defaultValue string, description string, exportable bool) *Option {
-
+func String(name string, defaultValue string, description string, opt_mask int) *Option {
 	opt := Option{
 		Name:        name,
 		Description: description,
@@ -32,15 +36,19 @@ func String(name string, defaultValue string, description string, exportable boo
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Exportable: exportable,
+		Options: ConfigOptionFromMask(opt_mask),
 	}
 
 	return &opt
+}
+
+// DefaultBool creates an Option with the parameters given of type bool and default options
+func DefaultBool(name string, defaultValue bool, description string) *Option {
+	return Bool(name, defaultValue, description, 0)
 }
 
 // Bool creates an Option with the parameters given of type bool
-func Bool(name string, defaultValue bool, description string, exportable bool) *Option {
-
+func Bool(name string, defaultValue bool, description string, opt_mask int) *Option {
 	opt := Option{
 		Name:        name,
 		Description: description,
@@ -49,15 +57,19 @@ func Bool(name string, defaultValue bool, description string, exportable bool) *
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Exportable: exportable,
+		Options: ConfigOptionFromMask(opt_mask),
 	}
 
 	return &opt
+}
+
+// DefaultInt creates an Option with the parameters given of type int64 and default options
+func DefaultInt(name string, defaultValue int64, description string) *Option {
+	return Int(name, defaultValue, description, 0)
 }
 
 // Int creates an Option with the parameters given of type int64
-func Int(name string, defaultValue int64, description string, exportable bool) *Option {
-
+func Int(name string, defaultValue int64, description string, opt_mask int) *Option {
 	opt := Option{
 		Name:        name,
 		Description: description,
@@ -66,15 +78,19 @@ func Int(name string, defaultValue int64, description string, exportable bool) *
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Exportable: exportable,
+		Options: ConfigOptionFromMask(opt_mask),
 	}
 
 	return &opt
 }
 
-// Float creates an Option with the parameters given of type float64
-func Float(name string, defaultValue float64, description string, exportable bool) *Option {
+// DefaultFloat creates an Option with the parameters given of type float64 and default options
+func DefaultFloat(name string, defaultValue float64, description string) *Option {
+	return Float(name, defaultValue, description, 0)
+}
 
+// Float creates an Option with the parameters given of type float64
+func Float(name string, defaultValue float64, description string, opt_mask int) *Option {
 	opt := Option{
 		Name:        name,
 		Description: description,
@@ -83,7 +99,7 @@ func Float(name string, defaultValue float64, description string, exportable boo
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Exportable: exportable,
+		Options: ConfigOptionFromMask(opt_mask),
 	}
 
 	return &opt
@@ -126,6 +142,12 @@ func Build() error {
 		Usage()
 		os.Exit(0)
 		return nil
+	}
+
+	// validate all options that are required
+	err = baseOptionSet.Validate()
+	if err != nil {
+		return err
 	}
 
 	// export new config to file if necessary

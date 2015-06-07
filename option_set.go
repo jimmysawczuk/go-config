@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -15,7 +16,7 @@ func (os OptionSet) Export() map[string]interface{} {
 func (os OptionSet) export(includeAll bool) map[string]interface{} {
 	tbr := make(map[string]interface{})
 	for _, v := range os {
-		if v.Exportable || includeAll {
+		if v.Options.Exportable || includeAll {
 			parts := strings.Split(v.Name, ".")
 			var i int
 			var cursor = &tbr
@@ -55,4 +56,26 @@ func (os OptionSet) Require(key string) *Option {
 		panic("Option with name " + key + " doesn't exist")
 	}
 	return result
+}
+
+func (os OptionSet) Validate() error {
+	hasError := false
+	invalidOpts := []string{}
+	for _, v := range os {
+		if v.Options.Required {
+			validOption := true
+			for _, f := range v.Options.Filters {
+				validOption = validOption && f(v)
+			}
+			if !validOption {
+				invalidOpts = append(invalidOpts, v.Name)
+			}
+			hasError = hasError && validOption
+		}
+	}
+
+	if hasError {
+		return fmt.Errorf("Some options were empty or invalid: %s", strings.Join(invalidOpts, ", "))
+	}
+	return nil
 }
