@@ -580,6 +580,6 @@ func TestBasicConfigWrite(t *testing.T) {
 }
 
 func TestConstants(t *testing.T) {
-	assert.Equal(t, Exportable, 1, "Exportable should be 1")
-	assert.Equal(t, Required, 2, "Required should be 2")
+	assert.Equal(t, int32(Exportable), int32(1), "Exportable should be 1")
+	assert.Equal(t, int32(Required), int32(2), "Required should be 2")
 }
