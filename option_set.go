@@ -61,20 +61,51 @@ func (os OptionSet) Require(key string) *Option {
 // Validate checks all Options in an OptionSet and returns an error if any of them don't pass any of their Filters and are Required.
 func (os OptionSet) Validate() error {
 	hasError := false
-	invalidOpts := []string{}
+
+	invalidOpts := make(optionFilterValidationSet, 0)
+
 	for _, v := range os {
 		validOption := true
+		errs := []string{}
 		for _, f := range v.Options.Filters {
-			validOption = validOption && f(v)
+			res, err := f(v)
+			validOption = validOption && res
+			if err != nil {
+				errs = append(errs, err.Error())
+			}
 		}
+
 		if !validOption {
-			invalidOpts = append(invalidOpts, v.Name)
+			invalidOpts = append(invalidOpts, optionFilterValidation{
+				name:   v.Name,
+				errors: errs,
+			})
 		}
 		hasError = hasError || !validOption
 	}
 
 	if hasError {
-		return fmt.Errorf("Some options were empty or invalid: %s", strings.Join(invalidOpts, ", "))
+		return invalidOpts
 	}
 	return nil
+}
+
+type optionFilterValidation struct {
+	name   string
+	errors []string
+}
+
+func (e optionFilterValidation) Error() string {
+	return fmt.Sprintf("%s: %s", e.name, strings.Join(e.errors, "; "))
+}
+
+type optionFilterValidationSet []optionFilterValidation
+
+func (e optionFilterValidationSet) Error() string {
+	str := []string{}
+	for _, v := range e {
+		str = append(str, "  "+v.Error())
+	}
+
+	return fmt.Sprintf("Some options were empty or invalid:\n%s", strings.Join(str, "\n"))
 }

@@ -1,24 +1,32 @@
 package config
 
-func validEnum(possibleValues []string) func(*Option) bool {
-	return func(v *Option) bool {
+import (
+	"fmt"
+)
+
+func validEnum(possibleValues []string) func(*Option) (bool, error) {
+	return func(v *Option) (bool, error) {
 		val := v.String()
 		for _, s := range possibleValues {
 			if val == s {
-				return true
+				return true, nil
 			}
 		}
-		return false
+		return false, fmt.Errorf("invalid value for enum: %s", val)
 	}
 }
 
-func validString() func(*Option) bool {
-	return func(v *Option) bool {
-		if v.Options.Required {
-			s := v.String()
-			return s != ""
+func validString() func(*Option) (bool, error) {
+	return func(v *Option) (bool, error) {
+		if !v.Options.Required {
+			return true, nil
+		}
+
+		s := v.String()
+		if s != "" {
+			return true, nil
 		} else {
-			return true
+			return false, fmt.Errorf("empty string")
 		}
 	}
 }

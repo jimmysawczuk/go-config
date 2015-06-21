@@ -36,14 +36,14 @@ type OptionMeta struct {
 	Required bool
 
 	// Filters is a set of boolean functions that are tested with the given value. If Required is true, all of these must succeed.
-	Filters []func(*Option) bool
+	Filters []func(*Option) (bool, error)
 }
 
 // DefaultOptionMeta returns the default OptionMeta object
 var DefaultOptionMeta = OptionMeta{
 	Exportable: false,
 	Required:   false,
-	Filters:    []func(*Option) bool{},
+	Filters:    []func(*Option) (bool, error){},
 }
 
 // String returns the string value of the option. Will panic if the Option's type is not a string.
