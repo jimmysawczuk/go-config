@@ -23,17 +23,13 @@ func resetBaseOptionSet() {
 
 // DefaultString creates an Option with the parameters given of type string and default options
 func DefaultString(name, defaultValue string, description string) *Option {
-	return String(name, defaultValue, description, 0)
+	return String(name, defaultValue, description, DefaultOptionMeta)
 }
 
 // String creates an Option with the parameters given of type string
-func String(name string, defaultValue string, description string, optMask OptionMask) *Option {
+func String(name string, defaultValue string, description string, meta OptionMeta) *Option {
 
-	opt := getOptionMetaFromMask(optMask)
-	opt.Filters = append(opt.Filters, func(v *Option) bool {
-		s := v.String()
-		return s != ""
-	})
+	meta.Filters = append(meta.Filters, validString())
 
 	v := Option{
 		Name:        name,
@@ -43,7 +39,7 @@ func String(name string, defaultValue string, description string, optMask Option
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Options: opt,
+		Options: meta,
 	}
 
 	return &v
@@ -51,11 +47,11 @@ func String(name string, defaultValue string, description string, optMask Option
 
 // DefaultBool creates an Option with the parameters given of type bool and default options
 func DefaultBool(name string, defaultValue bool, description string) *Option {
-	return Bool(name, defaultValue, description, 0)
+	return Bool(name, defaultValue, description, DefaultOptionMeta)
 }
 
 // Bool creates an Option with the parameters given of type bool
-func Bool(name string, defaultValue bool, description string, optMask OptionMask) *Option {
+func Bool(name string, defaultValue bool, description string, meta OptionMeta) *Option {
 	v := Option{
 		Name:        name,
 		Description: description,
@@ -64,7 +60,7 @@ func Bool(name string, defaultValue bool, description string, optMask OptionMask
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Options: getOptionMetaFromMask(optMask),
+		Options: meta,
 	}
 
 	return &v
@@ -72,11 +68,11 @@ func Bool(name string, defaultValue bool, description string, optMask OptionMask
 
 // DefaultInt creates an Option with the parameters given of type int64 and default options
 func DefaultInt(name string, defaultValue int64, description string) *Option {
-	return Int(name, defaultValue, description, 0)
+	return Int(name, defaultValue, description, DefaultOptionMeta)
 }
 
 // Int creates an Option with the parameters given of type int64
-func Int(name string, defaultValue int64, description string, optMask OptionMask) *Option {
+func Int(name string, defaultValue int64, description string, meta OptionMeta) *Option {
 	v := Option{
 		Name:        name,
 		Description: description,
@@ -85,7 +81,7 @@ func Int(name string, defaultValue int64, description string, optMask OptionMask
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Options: getOptionMetaFromMask(optMask),
+		Options: meta,
 	}
 
 	return &v
@@ -93,11 +89,11 @@ func Int(name string, defaultValue int64, description string, optMask OptionMask
 
 // DefaultFloat creates an Option with the parameters given of type float64 and default options
 func DefaultFloat(name string, defaultValue float64, description string) *Option {
-	return Float(name, defaultValue, description, 0)
+	return Float(name, defaultValue, description, DefaultOptionMeta)
 }
 
 // Float creates an Option with the parameters given of type float64
-func Float(name string, defaultValue float64, description string, optMask OptionMask) *Option {
+func Float(name string, defaultValue float64, description string, meta OptionMeta) *Option {
 	v := Option{
 		Name:        name,
 		Description: description,
@@ -106,7 +102,28 @@ func Float(name string, defaultValue float64, description string, optMask Option
 		Value:        defaultValue,
 		Type:         reflect.TypeOf(defaultValue),
 
-		Options: getOptionMetaFromMask(optMask),
+		Options: meta,
+	}
+
+	return &v
+}
+
+// Enum creates an Option with the parameters given of type string
+func Enum(name string, possibleValues []string, defaultValue string, description string, meta OptionMeta) *Option {
+
+	meta.Filters = append(meta.Filters, validEnum(possibleValues))
+
+	meta.Required = true
+
+	v := Option{
+		Name:        name,
+		Description: description,
+
+		DefaultValue: reflect.ValueOf(defaultValue),
+		Value:        defaultValue,
+		Type:         reflect.TypeOf(defaultValue),
+
+		Options: meta,
 	}
 
 	return &v

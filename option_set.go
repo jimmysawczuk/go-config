@@ -63,16 +63,14 @@ func (os OptionSet) Validate() error {
 	hasError := false
 	invalidOpts := []string{}
 	for _, v := range os {
-		if v.Options.Required {
-			validOption := true
-			for _, f := range v.Options.Filters {
-				validOption = validOption && f(v)
-			}
-			if !validOption {
-				invalidOpts = append(invalidOpts, v.Name)
-			}
-			hasError = hasError || !validOption
+		validOption := true
+		for _, f := range v.Options.Filters {
+			validOption = validOption && f(v)
 		}
+		if !validOption {
+			invalidOpts = append(invalidOpts, v.Name)
+		}
+		hasError = hasError || !validOption
 	}
 
 	if hasError {
