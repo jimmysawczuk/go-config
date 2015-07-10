@@ -78,6 +78,8 @@ func (j jsonConfigMapParseErrorList) Len() int {
 
 func parse(configMap map[string]interface{}, prefix string) (err error) {
 
+	fmt.Println(configMap, prefix)
+
 	errs := make(jsonConfigMapParseErrorList, 0)
 
 	for k, v := range configMap {
@@ -131,7 +133,7 @@ func parse(configMap map[string]interface{}, prefix string) (err error) {
 		} else {
 			switch v.(type) {
 			case map[string]interface{}:
-				cerr := parse(v.(map[string]interface{}), k+".")
+				cerr := parse(v.(map[string]interface{}), prefix+k+".")
 				if cerr != nil {
 					if childerrs, ok := cerr.(jsonConfigMapParseErrorList); ok {
 						errs.Merge(childerrs)

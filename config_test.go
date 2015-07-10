@@ -672,3 +672,50 @@ func TestInvalidEnumConfig(t *testing.T) {
 
 	assert.NotNil(t, err, "There should be an error because the enum is wrong")
 }
+
+func TestTripleNestedOption(t *testing.T) {
+	// writing the config.json to a temporary file
+	configJSON := []byte(`{
+	"equation": {
+		"addend": {
+			"a": 4,
+			"b": 2
+		}
+	},
+	"mode": "subtract",
+	"name": "Test"
+}`)
+
+	filepath := tempDir + "/go-config-triple-nested-option.json"
+
+	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
+	if err != nil {
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
+		t.FailNow()
+	}
+
+	fp.Write(configJSON)
+	fp.Close()
+
+	// rigging the test to use our temporary config file
+	resetBaseOptionSet()
+	baseOptionSet.Require("config").SetFromString(filepath)
+
+	// setting up our config options to read the temporary config.json properly
+	Add(Int("equation.addend.a", 10, "The first addend").Exportable(true))
+	Add(Int("equation.addend.b", 5, "The second addend").Exportable(true))
+	Add(Enum("mode", []string{"subtract", "add"}, "subtract", "subtract or add").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+
+	err = Build()
+
+	assert.Nil(t, err, "There should be no error here")
+
+	addend_a := Require("equation.addend.a").Int()
+	addend_b := Require("equation.addend.b").Int()
+
+	assert.Equal(t, 4, addend_a, "addend_a should be 4")
+	assert.Equal(t, 2, addend_b, "addend_b should be 2")
+
+	assert.Equal(t, 2, addend_a-addend_b, "%d minus %d != 2", addend_a, addend_b)
+}
