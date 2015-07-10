@@ -20,9 +20,9 @@ import (
 )
 
 func main() {
-	config.Add(config.Int("addend.a", 10, "The first addend", true))
-	config.Add(config.Float("addend.b", math.Pi, "The second addend", true))
-	config.Add(config.Bool("subtract", false, "Subtract instead of add", true))
+	config.Add(config.Int("addend.a", 10, "The first addend").Exportable(true))
+	config.Add(config.Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	config.Add(config.Bool("subtract", false, "Subtract instead of add").Exportable(true))
 
 	config.Build()
 
