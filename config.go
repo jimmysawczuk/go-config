@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"reflect"
 )
 
 var baseOptionSet OptionSet
@@ -16,117 +15,9 @@ func init() {
 
 func resetBaseOptionSet() {
 	baseOptionSet = make(OptionSet)
-	Add(DefaultString("config", "config.json", "The filename of the config file to use"))
-	Add(DefaultBool("config-export", false, "Export the as-run configuration to a file"))
-	Add(DefaultBool("config-generate", false, "Export the as-run configuration to a file, then exit"))
-}
-
-// DefaultString creates an Option with the parameters given of type string and default options
-func DefaultString(name, defaultValue string, description string) *Option {
-	return String(name, defaultValue, description, DefaultOptionMeta)
-}
-
-// String creates an Option with the parameters given of type string
-func String(name string, defaultValue string, description string, meta OptionMeta) *Option {
-
-	meta.Filters = append(meta.Filters, validString())
-
-	v := Option{
-		Name:        name,
-		Description: description,
-
-		DefaultValue: reflect.ValueOf(defaultValue),
-		Value:        defaultValue,
-		Type:         reflect.TypeOf(defaultValue),
-
-		Options: meta,
-	}
-
-	return &v
-}
-
-// DefaultBool creates an Option with the parameters given of type bool and default options
-func DefaultBool(name string, defaultValue bool, description string) *Option {
-	return Bool(name, defaultValue, description, DefaultOptionMeta)
-}
-
-// Bool creates an Option with the parameters given of type bool
-func Bool(name string, defaultValue bool, description string, meta OptionMeta) *Option {
-	v := Option{
-		Name:        name,
-		Description: description,
-
-		DefaultValue: reflect.ValueOf(defaultValue),
-		Value:        defaultValue,
-		Type:         reflect.TypeOf(defaultValue),
-
-		Options: meta,
-	}
-
-	return &v
-}
-
-// DefaultInt creates an Option with the parameters given of type int64 and default options
-func DefaultInt(name string, defaultValue int64, description string) *Option {
-	return Int(name, defaultValue, description, DefaultOptionMeta)
-}
-
-// Int creates an Option with the parameters given of type int64
-func Int(name string, defaultValue int64, description string, meta OptionMeta) *Option {
-	v := Option{
-		Name:        name,
-		Description: description,
-
-		DefaultValue: reflect.ValueOf(defaultValue),
-		Value:        defaultValue,
-		Type:         reflect.TypeOf(defaultValue),
-
-		Options: meta,
-	}
-
-	return &v
-}
-
-// DefaultFloat creates an Option with the parameters given of type float64 and default options
-func DefaultFloat(name string, defaultValue float64, description string) *Option {
-	return Float(name, defaultValue, description, DefaultOptionMeta)
-}
-
-// Float creates an Option with the parameters given of type float64
-func Float(name string, defaultValue float64, description string, meta OptionMeta) *Option {
-	v := Option{
-		Name:        name,
-		Description: description,
-
-		DefaultValue: reflect.ValueOf(defaultValue),
-		Value:        defaultValue,
-		Type:         reflect.TypeOf(defaultValue),
-
-		Options: meta,
-	}
-
-	return &v
-}
-
-// Enum creates an Option with the parameters given of type string
-func Enum(name string, possibleValues []string, defaultValue string, description string, meta OptionMeta) *Option {
-
-	meta.Filters = append(meta.Filters, validEnum(possibleValues))
-
-	meta.Required = true
-
-	v := Option{
-		Name:        name,
-		Description: description,
-
-		DefaultValue: reflect.ValueOf(defaultValue),
-		Value:        defaultValue,
-		Type:         reflect.TypeOf(defaultValue),
-
-		Options: meta,
-	}
-
-	return &v
+	Add(String("config", "config.json", "The filename of the config file to use"))
+	Add(Bool("config-export", false, "Export the as-run configuration to a file"))
+	Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit"))
 }
 
 // Add adds an Option to the config's OptionSet

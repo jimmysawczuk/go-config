@@ -11,10 +11,12 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path"
 )
 
 var originalOSArgs []string
 var originalFlagSet *flag.FlagSet
+var tempDir string
 
 func init() {
 	// defined in usage.go, just tells Usage() where to direct output.
@@ -25,7 +27,13 @@ func init() {
 	originalOSArgs = os.Args
 	originalFlagSet = flag.CommandLine
 
-	_ = fmt.Printf
+	tempDir = path.Clean(os.TempDir() + "/go-config")
+
+	err := os.MkdirAll(tempDir, 0775)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating temporary directory: %s\n", err)
+		os.Exit(2)
+	}
 }
 
 func resetArgs() {
@@ -44,11 +52,11 @@ func TestBasicConfigLoad(t *testing.T) {
     "name": "Basic Example"
 }`)
 
-	filepath := os.TempDir() + "/go-config-basic-config.json"
+	filepath := tempDir + "/go-config-basic-config.json"
 
 	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
 	if err != nil {
-		t.Errorf("Couldn't open temporary config file")
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
 		t.FailNow()
 	}
 
@@ -60,10 +68,10 @@ func TestBasicConfigLoad(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend", OptionMeta{Exportable: true}))
-	Add(Float("addend.b", math.Pi, "The second addend", OptionMeta{Exportable: true}))
-	Add(Bool("subtract", false, "Subtract instead of add", OptionMeta{Exportable: true}))
-	Add(String("name", "Basic Example", "Name of the example", OptionMeta{Exportable: true}))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
 
 	resetArgs()
 
@@ -109,11 +117,11 @@ func TestRequiredConfigLoad(t *testing.T) {
     "param-2": "provided"
 }`)
 
-	filepath := os.TempDir() + "/go-config-required-config.json"
+	filepath := tempDir + "/go-config-required-config.json"
 
 	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
 	if err != nil {
-		t.Errorf("Couldn't open temporary config file")
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
 		t.FailNow()
 	}
 
@@ -125,11 +133,11 @@ func TestRequiredConfigLoad(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend", OptionMeta{Exportable: true}))
-	Add(Float("addend.b", math.Pi, "The second addend", OptionMeta{Exportable: true}))
-	Add(Bool("subtract", false, "Subtract instead of add", OptionMeta{Exportable: true}))
-	Add(String("param-1", "Value 1", "Name of the example", OptionMeta{Exportable: true, Required: true}))
-	Add(String("param-2", "Value 2", "", OptionMeta{Exportable: true, Required: true}))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
+	Add(String("param-1", "Value 1", "Name of the example").Exportable(true).AddFilter(NonEmptyString()))
+	Add(String("param-2", "Value 2", "").Exportable(true).AddFilter(NonEmptyString()))
 
 	resetArgs()
 
@@ -179,11 +187,11 @@ func TestErroredConfigLoad(t *testing.T) {
     "name": false
 }`)
 
-	filepath := os.TempDir() + "/go-config-basic-config.json"
+	filepath := tempDir + "/go-config-basic-config.json"
 
 	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
 	if err != nil {
-		t.Errorf("Couldn't open temporary config file")
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
 		t.FailNow()
 	}
 
@@ -195,10 +203,10 @@ func TestErroredConfigLoad(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend", OptionMeta{Exportable: true}))
-	Add(Float("addend.b", math.Pi, "The second addend", OptionMeta{Exportable: true}))
-	Add(Bool("subtract", false, "Subtract instead of add", OptionMeta{Exportable: true}))
-	Add(String("name", "Basic Example", "Name of the example", OptionMeta{Exportable: true}))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
 
 	resetArgs()
 
@@ -222,11 +230,11 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
     "name": "Basic Example"
 }`)
 
-	filepath := os.TempDir() + "/go-config-basic-config.json"
+	filepath := tempDir + "/go-config-basic-config.json"
 
 	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
 	if err != nil {
-		t.Errorf("Couldn't open temporary config file")
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
 		t.FailNow()
 	}
 
@@ -238,10 +246,10 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend", OptionMeta{Exportable: true}))
-	Add(Float("addend.b", math.Pi, "The second addend", OptionMeta{Exportable: true}))
-	Add(Bool("subtract", false, "Subtract instead of add", OptionMeta{Exportable: true}))
-	Add(String("name", "Basic Example", "Name of the example", OptionMeta{Exportable: true}))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
 
 	// and here we go!
 	os.Args = []string{
@@ -291,11 +299,11 @@ func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
     "name": "Basic Example"
 }`)
 
-	filepath := os.TempDir() + "/go-config-basic-config.json"
+	filepath := tempDir + "/go-config-basic-config.json"
 
 	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
 	if err != nil {
-		t.Errorf("Couldn't open temporary config file")
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
 		t.FailNow()
 	}
 
@@ -307,10 +315,10 @@ func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend", OptionMeta{Exportable: true}))
-	Add(Float("addend.b", math.Pi, "The second addend", OptionMeta{Exportable: true}))
-	Add(Bool("subtract", false, "Subtract instead of add", OptionMeta{Exportable: true}))
-	Add(String("name", "Basic Example", "Name of the example", OptionMeta{Exportable: true}))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
 
 	// and here we go!
 	os.Args = []string{
@@ -366,11 +374,10 @@ func TestBasicConfigLoadWithFinalBooleanFlag(t *testing.T) {
     "name": "Basic Example"
 }`)
 
-	filepath := os.TempDir() + "/go-config-basic-config.json"
-
+	filepath := tempDir + "/go-config-basic-config.json"
 	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
 	if err != nil {
-		t.Errorf("Couldn't open temporary config file")
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
 		t.FailNow()
 	}
 
@@ -382,10 +389,10 @@ func TestBasicConfigLoadWithFinalBooleanFlag(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend", OptionMeta{Exportable: true}))
-	Add(Float("addend.b", math.Pi, "The second addend", OptionMeta{Exportable: true}))
-	Add(Bool("subtract", false, "Subtract instead of add", OptionMeta{Exportable: true}))
-	Add(String("name", "Basic Example", "Name of the example", OptionMeta{Exportable: true}))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
 
 	// and here we go!
 	os.Args = []string{
@@ -440,11 +447,11 @@ func TestBasicConfigLoadWithUndefinedFlags(t *testing.T) {
     "name": "Basic Example"
 }`)
 
-	filepath := os.TempDir() + "/go-config-basic-config.json"
+	filepath := tempDir + "/go-config-basic-config.json"
 
 	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
 	if err != nil {
-		t.Errorf("Couldn't open temporary config file")
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
 		t.FailNow()
 	}
 
@@ -456,10 +463,10 @@ func TestBasicConfigLoadWithUndefinedFlags(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend", OptionMeta{Exportable: true}))
-	Add(Float("addend.b", math.Pi, "The second addend", OptionMeta{Exportable: true}))
-	Add(Bool("subtract", false, "Subtract instead of add", OptionMeta{Exportable: true}))
-	Add(String("name", "Basic Example", "Name of the example", OptionMeta{Exportable: true}))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
 
 	// and here we go!
 	os.Args = []string{
@@ -520,11 +527,11 @@ func TestBasicConfigWrite(t *testing.T) {
     "subtract": true
 }`)
 
-	filepath := os.TempDir() + "/go-config-basic-config-write.json"
+	filepath := tempDir + "/go-config-basic-config-write.json"
 
 	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
 	if err != nil {
-		t.Errorf("Couldn't open temporary config file")
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
 		t.FailNow()
 	}
 
@@ -536,10 +543,10 @@ func TestBasicConfigWrite(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend", OptionMeta{Exportable: true}))
-	Add(Float("addend.b", math.Pi, "The second addend", OptionMeta{Exportable: true}))
-	Add(Bool("subtract", false, "Subtract instead of add", OptionMeta{Exportable: true}))
-	Add(String("name", "Basic Example", "Name of the example", OptionMeta{Exportable: true}))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
 
 	os.Args = []string{
 		`go-config`,
@@ -563,10 +570,10 @@ func TestBasicConfigWrite(t *testing.T) {
 	resetBaseOptionSet()
 	baseOptionSet.Require("config").SetFromString(filepath)
 
-	Add(Int("addend.a", 10, "The first addend", OptionMeta{Exportable: true}))
-	Add(Float("addend.b", math.Pi, "The second addend", OptionMeta{Exportable: true}))
-	Add(Bool("subtract", false, "Subtract instead of add", OptionMeta{Exportable: true}))
-	Add(String("name", "Basic Example", "Name of the example", OptionMeta{Exportable: true}))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
 
 	resetArgs()
 
@@ -590,11 +597,11 @@ func TestEnumConfig(t *testing.T) {
     "name": "Test"
 }`)
 
-	filepath := os.TempDir() + "/go-config-enum-config.json"
+	filepath := tempDir + "/go-config-enum-config.json"
 
 	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
 	if err != nil {
-		t.Errorf("Couldn't open temporary config file")
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
 		t.FailNow()
 	}
 
@@ -606,10 +613,10 @@ func TestEnumConfig(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend", OptionMeta{Exportable: true}))
-	Add(Float("addend.b", math.Pi, "The second addend", OptionMeta{Exportable: true}))
-	Add(Enum("mode", []string{"subtract", "add"}, "add", "subtract or add", OptionMeta{Exportable: true}))
-	Add(String("name", "Basic Example", "Name of the example", OptionMeta{Exportable: true}))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Enum("mode", []string{"subtract", "add"}, "add", "subtract or add").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
 
 	err = Build()
 
@@ -640,11 +647,11 @@ func TestInvalidEnumConfig(t *testing.T) {
     "name": "Test"
 }`)
 
-	filepath := os.TempDir() + "/go-config-enum-config.json"
+	filepath := tempDir + "/go-config-enum-config.json"
 
 	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
 	if err != nil {
-		t.Errorf("Couldn't open temporary config file")
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
 		t.FailNow()
 	}
 
@@ -656,13 +663,12 @@ func TestInvalidEnumConfig(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend", OptionMeta{Exportable: true}))
-	Add(Float("addend.b", math.Pi, "The second addend", OptionMeta{Exportable: true}))
-	Add(Enum("mode", []string{"subtract", "add"}, "subtract", "subtract or add", OptionMeta{Exportable: true}))
-	Add(String("name", "Basic Example", "Name of the example", OptionMeta{Exportable: true}))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Enum("mode", []string{"subtract", "add"}, "subtract", "subtract or add").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
 
 	err = Build()
-	t.Logf("%s", err)
 
 	assert.NotNil(t, err, "There should be an error because the enum is wrong")
 }

@@ -4,7 +4,9 @@ import (
 	"fmt"
 )
 
-func validEnum(possibleValues []string) func(*Option) (bool, error) {
+// IsOneOfStrings returns an OptionFilterFunc that checks the Option value against a list of
+// string values and returns true if the Option value matches one of the possible values
+func IsOneOfStrings(possibleValues []string) OptionFilterFunc {
 	return func(v *Option) (bool, error) {
 		val := v.String()
 		for _, s := range possibleValues {
@@ -12,21 +14,19 @@ func validEnum(possibleValues []string) func(*Option) (bool, error) {
 				return true, nil
 			}
 		}
-		return false, fmt.Errorf("invalid value for enum: %s", val)
+		return false, fmt.Errorf("%s is not contained in possible values", val)
 	}
 }
 
-func validString() func(*Option) (bool, error) {
+// NonEmptyString returns an OptionFilterFunc that returns true if the Option value is a non-empty
+// string. It will also return false if the Option is not a string.
+func NonEmptyString() OptionFilterFunc {
 	return func(v *Option) (bool, error) {
-		if !v.Options.Required {
-			return true, nil
-		}
-
 		s := v.String()
 		if s != "" {
 			return true, nil
 		} else {
-			return false, fmt.Errorf("empty string")
+			return false, fmt.Errorf("value is empty string")
 		}
 	}
 }
