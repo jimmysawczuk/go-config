@@ -714,8 +714,8 @@ func TestTripleNestedOption(t *testing.T) {
 	addend_a := Require("equation.addend.a").Int()
 	addend_b := Require("equation.addend.b").Int()
 
-	assert.Equal(t, 4, addend_a, "addend_a should be 4")
-	assert.Equal(t, 2, addend_b, "addend_b should be 2")
+	assert.Equal(t, int64(4), addend_a, "addend_a should be 4")
+	assert.Equal(t, int64(2), addend_b, "addend_b should be 2")
 
-	assert.Equal(t, 2, addend_a-addend_b, "%d minus %d != 2", addend_a, addend_b)
+	assert.Equal(t, int64(2), addend_a-addend_b, "%d minus %d != 2", addend_a, addend_b)
 }
