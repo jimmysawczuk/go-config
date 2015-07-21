@@ -50,6 +50,7 @@ var DefaultOptionMeta = OptionMeta{
 	Exportable: false,
 	Validate:   true,
 	Filters:    []OptionFilterFunc{},
+	SortOrder:  0,
 }
 
 // String creates an Option with the parameters given of type string
