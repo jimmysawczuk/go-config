@@ -14,6 +14,7 @@ func IsOneOfStrings(possibleValues []string) OptionFilterFunc {
 				return true, nil
 			}
 		}
+
 		return false, fmt.Errorf("%s is not contained in possible values", val)
 	}
 }
@@ -23,10 +24,10 @@ func IsOneOfStrings(possibleValues []string) OptionFilterFunc {
 func NonEmptyString() OptionFilterFunc {
 	return func(v *Option) (bool, error) {
 		s := v.String()
-		if s != "" {
-			return true, nil
-		} else {
+		if s == "" {
 			return false, fmt.Errorf("value is empty string")
 		}
+
+		return true, nil
 	}
 }

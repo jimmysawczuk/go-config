@@ -37,8 +37,12 @@ type OptionMeta struct {
 
 	// Filters is a set of boolean functions that are tested with the given value. If Validate is true, all of these must succeed.
 	Filters []OptionFilterFunc
+
+	// SortOrder controls the sort order of Options when displayed in Usage(). Defaults to 0; ties are resolved alphabetically.
+	SortOrder int
 }
 
+// OptionFilterFunc is a function type that takes an *Option as a parameter. It returns true, nil if the *Option passes the filter, and false, error with a reason why if it didn't.
 type OptionFilterFunc func(*Option) (bool, error)
 
 // DefaultOptionMeta returns the default OptionMeta object
@@ -205,24 +209,27 @@ func (o *Option) SetFromString(val string) (err error) {
 	return
 }
 
+// Exportable sets whether or not the Option is exportable to a config file.
 func (o *Option) Exportable(v bool) *Option {
 	o.Options.Exportable = v
 	return o
 }
 
+// Validate sets whether or not the Filters on the Option will be tested for validity before being accepted.
 func (o *Option) Validate(v bool) *Option {
 	o.Options.Validate = v
 	return o
 }
 
+// AddFilter adds an OptionFilterFunc to the Option's filter set. It also sets Validate to true.
 func (o *Option) AddFilter(v OptionFilterFunc) *Option {
 	o.Options.Filters = append(o.Options.Filters, v)
 	o.Options.Validate = true
 	return o
 }
 
-type sortedOptionSlice []Option
-
-func (s sortedOptionSlice) Less(a, b int) bool { return s[a].Name < s[b].Name }
-func (s sortedOptionSlice) Swap(a, b int)      { s[a], s[b] = s[b], s[a] }
-func (s sortedOptionSlice) Len() int           { return len(s) }
+// SortOrder sets the sort order on the Option used in Usage().
+func (o *Option) SortOrder(i int) *Option {
+	o.Options.SortOrder = i
+	return o
+}

@@ -10,6 +10,21 @@ import (
 // UsageWriter is the io.Writer to use for outputting Usage(). Defaults to stdout.
 var UsageWriter io.Writer = os.Stdout
 
+type sortedUsageOptionSlice []Option
+
+func (s sortedUsageOptionSlice) Less(a, b int) bool {
+	if s[a].Options.SortOrder < s[b].Options.SortOrder {
+		return true
+	} else if s[a].Options.SortOrder > s[b].Options.SortOrder {
+		return false
+	}
+
+	return s[a].Name < s[b].Name
+}
+
+func (s sortedUsageOptionSlice) Swap(a, b int) { s[a], s[b] = s[b], s[a] }
+func (s sortedUsageOptionSlice) Len() int      { return len(s) }
+
 // Usage prints the help information to UsageWriter (defaults to stdout).
 func Usage() {
 
@@ -31,7 +46,7 @@ func Usage() {
 		}
 	}
 
-	sort.Sort(sortedOptionSlice(opts))
+	sort.Sort(sortedUsageOptionSlice(opts))
 
 	uprintln(`%s`, os.Args[0])
 

@@ -68,10 +68,10 @@ func TestBasicConfigLoad(t *testing.T) {
 	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend").Exportable(true))
-	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	Add(Int("addend.a", 10, "The first addend").Exportable(true).SortOrder(-1))
+	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true).SortOrder(-1))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+	Add(String("name", "Basic Example", "Name of the example").Exportable(true).SortOrder(+1))
 
 	resetArgs()
 
@@ -711,11 +711,11 @@ func TestTripleNestedOption(t *testing.T) {
 
 	assert.Nil(t, err, "There should be no error here")
 
-	addend_a := Require("equation.addend.a").Int()
-	addend_b := Require("equation.addend.b").Int()
+	a := Require("equation.addend.a").Int()
+	b := Require("equation.addend.b").Int()
 
-	assert.Equal(t, int64(4), addend_a, "addend_a should be 4")
-	assert.Equal(t, int64(2), addend_b, "addend_b should be 2")
+	assert.Equal(t, int64(4), a, "addend_a should be 4")
+	assert.Equal(t, int64(2), b, "addend_b should be 2")
 
-	assert.Equal(t, int64(2), addend_a-addend_b, "%d minus %d != 2", addend_a, addend_b)
+	assert.Equal(t, int64(2), a-b, "%d minus %d != 2", a, b)
 }
