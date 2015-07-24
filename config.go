@@ -22,7 +22,7 @@ func resetBaseOptionSet() {
 
 // Add adds an Option to the config's OptionSet
 func Add(o *Option) {
-	baseOptionSet[o.Name] = o
+	baseOptionSet.Add(o)
 }
 
 // Build builds the configuration object. Starts by setting the default values as defined in code, then parses the config file,

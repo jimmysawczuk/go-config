@@ -39,8 +39,8 @@ func (os OptionSet) export(includeAll bool) map[string]interface{} {
 }
 
 // Add adds an Option to an OptionSet with a key of the Option's name.
-func (os OptionSet) Add(o Option) {
-	os[o.Name] = &o
+func (os OptionSet) Add(o *Option) {
+	os[o.Name] = o
 }
 
 // Get retrieves an Option with the Name of key, and a boolean to determine if it was found or not.

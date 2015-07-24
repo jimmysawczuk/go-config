@@ -12,6 +12,7 @@ import (
 	"math"
 	"os"
 	"path"
+	"reflect"
 )
 
 var originalOSArgs []string
@@ -48,6 +49,7 @@ func TestBasicConfigLoad(t *testing.T) {
         "a": 10,
         "b": 3.8
     },
+    "bad_string": 8.5,
     "subtract": false,
     "name": "Basic Example"
 }`)
@@ -72,11 +74,19 @@ func TestBasicConfigLoad(t *testing.T) {
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true).SortOrder(-1))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
 	Add(String("name", "Basic Example", "Name of the example").Exportable(true).SortOrder(+1))
+	Add(String("bad_string", "test", "Defined as a string, but isn't").Exportable(true).SortOrder(+1))
 
 	resetArgs()
 
 	// and here we go!
-	Build()
+	err = Build()
+	assert.EqualError(t, err, jsonConfigMapParseErrorList([]jsonConfigMapError{
+		jsonConfigMapParseError{
+			key:      "bad_string",
+			got:      reflect.Float64,
+			expected: reflect.String,
+		},
+	}).Error())
 
 	a := Require("addend.a").Int()
 	assert.Equal(t, a, int64(10), "addend.a should be 10")
