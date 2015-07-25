@@ -20,12 +20,33 @@ import (
 )
 
 func main() {
+	// Set up the app information for the --help output
+	config.App.Name = "config-test"
+	config.App.Version = "1.0.0"
+	config.App.Description = "Takes two arguments and does an operation on them"
+
+	config.App.Examples = []config.Example{
+		{
+			Cmd:      `config-tester -addend.a=1 -addend-b=2`,
+			Function: "Adds 1 and 2, returns 3",
+		},
+
+		{
+			Cmd:      `config-tester -addend.a=3 -addend-b=2 -subtract`,
+			Function: "Subtracts 2 from 3, returns 1",
+		},
+	}
+
+	// Add the variables
 	config.Add(config.Int("addend.a", 10, "The first addend").Exportable(true))
 	config.Add(config.Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	config.Add(config.Bool("subtract", false, "Subtract instead of add").Exportable(true))
 
+	// And build the config!
 	config.Build()
 
+	// Note that we're only converting to float64s so we can add them; addend.a
+	// comes back as an int64 and addend.b comes back as a float64.
 	addend_1 := float64(config.Require("addend.a").Int())
 	addend_2 := float64(config.Require("addend.b").Float())
 
@@ -55,14 +76,34 @@ You can override individual config values using flags:
 ```bash
 $ config-test --help
 Usage of config-test:
-  -addend.a=10: The first addend
-  -addend.b=3.141592653589793: The second addend
-  -config="config.json": The filename of the config file to use
-  -config-export=false: Export the as-run configuration to a file
-  -subtract=false: Subtract instead of add
-$ config-test --addend.a=5
-5 3.141592653589793 false
-8.141592653589793
+  Takes two arguments and does an operation on them
+
+  Examples:
+     config-tester -addend.a=1 -addend-b=2
+     Adds 1 and 2, returns 3
+
+     config-tester -addend.a=3 -addend-b=2 -subtract
+     Subtracts 2 from 3, returns 1
+
+  Flags:
+    -addend.a        (default: 10)
+     The first addend
+
+    -addend.b        (default: 3.141592653589793)
+     The second addend
+
+    -subtract        (default: false)
+     Subtract instead of add
+
+
+    -config          (default: config.json)
+     The filename of the config file to use
+
+    -config-export   (default: false)
+     Export the as-run configuration to a file
+
+    -config-generate (default: false)
+     Export the as-run configuration to a file, then exit
 ```
 
 ### Automatic config file generation
