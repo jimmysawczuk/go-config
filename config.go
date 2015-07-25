@@ -15,9 +15,9 @@ func init() {
 
 func resetBaseOptionSet() {
 	baseOptionSet = make(OptionSet)
-	Add(String("config", "config.json", "The filename of the config file to use"))
-	Add(Bool("config-export", false, "Export the as-run configuration to a file"))
-	Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit"))
+	Add(String("config", "config.json", "The filename of the config file to use").SortOrder(999))
+	Add(Bool("config-export", false, "Export the as-run configuration to a file").SortOrder(999))
+	Add(Bool("config-generate", false, "Export the as-run configuration to a file, then exit").SortOrder(999))
 }
 
 // Add adds an Option to the config's OptionSet
