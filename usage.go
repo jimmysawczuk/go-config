@@ -94,8 +94,8 @@ func Usage() {
 			}
 
 			uprintln(fmtStr,
-				fmt.Sprintf("%s", opt.Name),
-				opt.DefaultValueString(),
+				opt.Name,
+				opt.defaultValueString("<empty>"),
 				opt.Description,
 			)
 

@@ -160,22 +160,34 @@ func (o Option) Int() int64 {
 	return reflect.ValueOf(o.Value).Int()
 }
 
-// DefaultValueString returns the Option's default value as a string
-func (o Option) DefaultValueString() string {
+// defaultValueString returns the Option's default value as a string. If that value resolves to "", it'll return the
+// emptyReplacement argument instead.
+func (o Option) defaultValueString(emptyReplacement string) string {
 	v := o.DefaultValue.(reflect.Value)
+
+	ret := ""
 
 	switch o.Type.Kind() {
 	case reflect.String:
-		return fmt.Sprintf(`%v`, v.String())
+		ret = fmt.Sprintf(`%v`, v.String())
 	case reflect.Int64:
-		return fmt.Sprintf(`%v`, v.Int())
+		ret = fmt.Sprintf(`%v`, v.Int())
 	case reflect.Float64:
-		return fmt.Sprintf(`%v`, v.Float())
+		ret = fmt.Sprintf(`%v`, v.Float())
 	case reflect.Bool:
-		return fmt.Sprintf(`%v`, v.Bool())
+		ret = fmt.Sprintf(`%v`, v.Bool())
 	}
 
-	return ""
+	if ret == "" {
+		ret = emptyReplacement
+	}
+
+	return ret
+}
+
+// DefaultValueString returns the Option's default value as a string.
+func (o Option) DefaultValueString() string {
+	return o.defaultValueString("")
 }
 
 // SetFromString attempts to set the Option's value as its proper type by parsing the string argument
