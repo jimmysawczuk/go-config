@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 )
 
 // IsOneOfStrings returns an OptionFilterFunc that checks the Option value against a list of
@@ -15,7 +16,7 @@ func IsOneOfStrings(possibleValues []string) OptionFilterFunc {
 			}
 		}
 
-		return false, fmt.Errorf("%s is not contained in possible values", val)
+		return false, fmt.Errorf("%s is not a possible value (try one of %s)", val, strings.Join(possibleValues, ", "))
 	}
 }
 
@@ -25,7 +26,7 @@ func NonEmptyString() OptionFilterFunc {
 	return func(v *Option) (bool, error) {
 		s := v.String()
 		if s == "" {
-			return false, fmt.Errorf("value is empty string")
+			return false, fmt.Errorf("value cannot be an empty string")
 		}
 
 		return true, nil
