@@ -28,12 +28,12 @@ func main() {
 	config.App.Examples = []config.Example{
 		{
 			Cmd:      `config-tester -addend.a=1 -addend-b=2`,
-			Function: "Adds 1 and 2, returns 3",
+			Description: "Adds 1 and 2, returns 3",
 		},
 
 		{
 			Cmd:      `config-tester -addend.a=3 -addend-b=2 -subtract`,
-			Function: "Subtracts 2 from 3, returns 1",
+			Description: "Subtracts 2 from 3, returns 1",
 		},
 	}
 
