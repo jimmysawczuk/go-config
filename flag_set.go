@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"reflect"
 )
 
 var builtInFlags = map[string]bool{
@@ -141,7 +140,7 @@ func (f *FlagSet) parseOne(builtInOnly bool) (seen bool, err error) {
 				return true, fmt.Errorf("Error setting option %s to %s: %s", name, value, err)
 			}
 
-		} else if option.Type.Kind() == reflect.Bool {
+		} else if option.Type == optionTypeBool {
 			// don't need a value, and we're not allowed to use two args, so we can set the value to true normally and continue
 			option.Value = true
 			return true, nil
