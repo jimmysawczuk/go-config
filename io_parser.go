@@ -38,7 +38,7 @@ type jsonConfigMapError interface {
 type jsonConfigMapParseError struct {
 	key      string
 	got      interface{}
-	expected string
+	expected Type
 }
 
 func (j jsonConfigMapParseError) Error() string {
@@ -48,7 +48,7 @@ func (j jsonConfigMapParseError) Error() string {
 type jsonConfigMapTruncateError struct {
 	key        string
 	got        interface{}
-	expected   string
+	expected   Type
 	difference float64
 }
 
@@ -110,9 +110,9 @@ func parseElem(opt *Option, key string, v interface{}) error {
 	switch v.(type) {
 
 	case float64:
-		if opt.Type == optionTypeFloat {
+		if opt.Type == FloatType {
 			opt.Value = v.(float64)
-		} else if opt.Type == optionTypeInt {
+		} else if opt.Type == IntType {
 			opt.Value = int64(v.(float64))
 			rounded := math.Floor(v.(float64) + 0.5)
 			diff := math.Abs(rounded - v.(float64))
@@ -132,7 +132,7 @@ func parseElem(opt *Option, key string, v interface{}) error {
 			}
 		}
 	case bool:
-		if opt.Type == optionTypeBool {
+		if opt.Type == BoolType {
 			opt.Value = v.(bool)
 		} else {
 			return jsonConfigMapParseError{
@@ -142,7 +142,7 @@ func parseElem(opt *Option, key string, v interface{}) error {
 			}
 		}
 	case string:
-		if opt.Type == optionTypeString {
+		if opt.Type == StringType {
 			opt.Value = v.(string)
 		} else {
 			return jsonConfigMapParseError{

@@ -5,11 +5,14 @@ import (
 	"strconv"
 )
 
+type Type string
+
 const (
-	optionTypeBool   string = "bool"
-	optionTypeString        = "string"
-	optionTypeFloat         = "float64"
-	optionTypeInt           = "int64"
+	BoolType   Type = "bool"
+	StringType      = "string"
+	FloatType       = "float64"
+	IntType         = "int64"
+	CustomType      = "custom"
 )
 
 // Option holds information for a configuration option
@@ -27,7 +30,7 @@ type Option struct {
 	DefaultValue interface{}
 
 	// Holds the type of this option
-	Type string
+	Type Type
 
 	// Extra options
 	Options OptionMeta
@@ -68,7 +71,7 @@ func String(name string, defaultValue string, description string) *Option {
 
 		DefaultValue: defaultValue,
 		Value:        defaultValue,
-		Type:         optionTypeString,
+		Type:         StringType,
 
 		Options: DefaultOptionMeta,
 	}
@@ -84,7 +87,7 @@ func Bool(name string, defaultValue bool, description string) *Option {
 
 		DefaultValue: defaultValue,
 		Value:        defaultValue,
-		Type:         optionTypeBool,
+		Type:         BoolType,
 
 		Options: DefaultOptionMeta,
 	}
@@ -100,7 +103,7 @@ func Int(name string, defaultValue int64, description string) *Option {
 
 		DefaultValue: defaultValue,
 		Value:        defaultValue,
-		Type:         optionTypeInt,
+		Type:         IntType,
 
 		Options: DefaultOptionMeta,
 	}
@@ -116,7 +119,7 @@ func Float(name string, defaultValue float64, description string) *Option {
 
 		DefaultValue: defaultValue,
 		Value:        defaultValue,
-		Type:         optionTypeFloat,
+		Type:         FloatType,
 
 		Options: DefaultOptionMeta,
 	}
@@ -134,7 +137,7 @@ func Enum(name string, possibleValues []string, defaultValue string, description
 
 		DefaultValue: defaultValue,
 		Value:        defaultValue,
-		Type:         optionTypeString,
+		Type:         StringType,
 
 		Options: DefaultOptionMeta,
 	}
@@ -186,22 +189,22 @@ func (o Option) DefaultValueString() string {
 // SetFromString attempts to set the Option's value as its proper type by parsing the string argument
 func (o *Option) SetFromString(val string) (err error) {
 	switch o.Type {
-	case optionTypeString:
+	case StringType:
 		o.Value = val
 
-	case optionTypeInt:
+	case IntType:
 		v, err := strconv.ParseInt(val, 0, 64)
 		if err == nil {
 			o.Value = v
 		}
 
-	case optionTypeFloat:
+	case FloatType:
 		v, err := strconv.ParseFloat(val, 64)
 		if err == nil {
 			o.Value = v
 		}
 
-	case optionTypeBool:
+	case BoolType:
 		switch val {
 		case "1", "t", "T", "true", "TRUE", "True":
 			o.Value = true

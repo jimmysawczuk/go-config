@@ -83,7 +83,7 @@ func TestBasicConfigLoad(t *testing.T) {
 		jsonConfigMapParseError{
 			key:      "bad_string",
 			got:      float64(8.5),
-			expected: optionTypeString,
+			expected: StringType,
 		},
 	}).Error())
 
