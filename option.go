@@ -5,8 +5,11 @@ import (
 	"strconv"
 )
 
+// Type is a string representing the type of data stored by an Option
 type Type string
 
+// These Types constants parallel their standard counterparts, and are the four elementary types that come
+// when unmarshaling JSON
 const (
 	BoolType   Type = "bool"
 	StringType      = "string"
