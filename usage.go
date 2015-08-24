@@ -17,8 +17,8 @@ type AppInfo struct {
 
 // Example describes an example of a proper way to invoke the current Go program.
 type Example struct {
-	Cmd      string
-	Function string
+	Cmd         string
+	Description string
 }
 
 // App is the AppInfo for the current Go program.
@@ -78,7 +78,7 @@ func Usage() {
 	if len(App.Examples) > 0 {
 		uprintln("  Examples:")
 		for _, v := range App.Examples {
-			uprintln("     %s\n     %s\n", v.Cmd, v.Function)
+			uprintln("     %s\n     %s\n", v.Cmd, v.Description)
 		}
 	}
 

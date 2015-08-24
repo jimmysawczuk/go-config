@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"reflect"
 	"strings"
 )
 
@@ -38,23 +37,23 @@ type jsonConfigMapError interface {
 
 type jsonConfigMapParseError struct {
 	key      string
-	got      reflect.Kind
-	expected reflect.Kind
+	got      interface{}
+	expected Type
 }
 
 func (j jsonConfigMapParseError) Error() string {
-	return fmt.Sprintf("unexpected type: %q: expected %s, got %s", j.key, j.expected, j.got)
+	return fmt.Sprintf("unexpected type: %q: expected %s, got %T", j.key, j.expected, j.got)
 }
 
 type jsonConfigMapTruncateError struct {
 	key        string
-	got        reflect.Kind
-	expected   reflect.Kind
+	got        interface{}
+	expected   Type
 	difference float64
 }
 
 func (j jsonConfigMapTruncateError) Error() string {
-	return fmt.Sprintf("possible truncate: %q: expected %s, got %s; difference: %e", j.key, j.expected, j.got, j.difference)
+	return fmt.Sprintf("possible truncate: %q: expected %s, got %T; difference: %e", j.key, j.expected, j.got, j.difference)
 }
 
 type jsonConfigMapParseErrorList []jsonConfigMapError
@@ -83,50 +82,9 @@ func parse(configMap map[string]interface{}, prefix string) (err error) {
 	for k, v := range configMap {
 		s, exists := baseOptionSet.Get(prefix + k)
 		if exists {
-			val := reflect.ValueOf(v)
-			switch val.Kind() {
-			case reflect.Float64:
-				if s.Type.Kind() == reflect.Float64 {
-					s.Value = val.Float()
-				} else if s.Type.Kind() == reflect.Int64 {
-					s.Value = int64(val.Float())
-					rounded := math.Floor(val.Float() + 0.5)
-					diff := math.Abs(rounded - val.Float())
-					if diff > 1e-32 {
-						errs = append(errs, jsonConfigMapTruncateError{
-							key:        prefix + k,
-							got:        val.Kind(),
-							expected:   s.Type.Kind(),
-							difference: diff,
-						})
-					}
-				} else {
-					errs = append(errs, jsonConfigMapParseError{
-						key:      prefix + k,
-						got:      val.Kind(),
-						expected: s.Type.Kind(),
-					})
-				}
-			case reflect.Bool:
-				if s.Type.Kind() == reflect.Bool {
-					s.Value = val.Bool()
-				} else {
-					errs = append(errs, jsonConfigMapParseError{
-						key:      prefix + k,
-						got:      val.Kind(),
-						expected: s.Type.Kind(),
-					})
-				}
-			case reflect.String:
-				if s.Type.Kind() == reflect.String {
-					s.Value = val.String()
-				} else {
-					errs = append(errs, jsonConfigMapParseError{
-						key:      prefix + k,
-						got:      val.Kind(),
-						expected: s.Type.Kind(),
-					})
-				}
+			err := parseElem(s, prefix+k, v)
+			if err != nil {
+				errs = append(errs, err)
 			}
 		} else {
 			switch v.(type) {
@@ -143,6 +101,56 @@ func parse(configMap map[string]interface{}, prefix string) (err error) {
 
 	if errs.Len() > 0 {
 		return errs
+	}
+
+	return nil
+}
+
+func parseElem(opt *Option, key string, v interface{}) error {
+	switch v.(type) {
+
+	case float64:
+		if opt.Type == FloatType {
+			opt.Value = v.(float64)
+		} else if opt.Type == IntType {
+			opt.Value = int64(v.(float64))
+			rounded := math.Floor(v.(float64) + 0.5)
+			diff := math.Abs(rounded - v.(float64))
+			if diff > 1e-32 {
+				return jsonConfigMapTruncateError{
+					key:        key,
+					got:        v,
+					expected:   opt.Type,
+					difference: diff,
+				}
+			}
+		} else {
+			return jsonConfigMapParseError{
+				key:      key,
+				got:      v,
+				expected: opt.Type,
+			}
+		}
+	case bool:
+		if opt.Type == BoolType {
+			opt.Value = v.(bool)
+		} else {
+			return jsonConfigMapParseError{
+				key:      key,
+				got:      v,
+				expected: opt.Type,
+			}
+		}
+	case string:
+		if opt.Type == StringType {
+			opt.Value = v.(string)
+		} else {
+			return jsonConfigMapParseError{
+				key:      key,
+				got:      v,
+				expected: opt.Type,
+			}
+		}
 	}
 
 	return nil

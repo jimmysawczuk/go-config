@@ -12,7 +12,6 @@ import (
 	"math"
 	"os"
 	"path"
-	"reflect"
 )
 
 var originalOSArgs []string
@@ -83,8 +82,8 @@ func TestBasicConfigLoad(t *testing.T) {
 	assert.EqualError(t, err, jsonConfigMapParseErrorList([]jsonConfigMapError{
 		jsonConfigMapParseError{
 			key:      "bad_string",
-			got:      reflect.Float64,
-			expected: reflect.String,
+			got:      float64(8.5),
+			expected: StringType,
 		},
 	}).Error())
 

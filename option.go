@@ -2,8 +2,20 @@ package config
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
+)
+
+// Type is a string representing the type of data stored by an Option
+type Type string
+
+// These Types constants parallel their standard counterparts, and are the four elementary types that come
+// when unmarshaling JSON
+const (
+	BoolType   Type = "bool"
+	StringType      = "string"
+	FloatType       = "float64"
+	IntType         = "int64"
+	CustomType      = "custom"
 )
 
 // Option holds information for a configuration option
@@ -21,7 +33,7 @@ type Option struct {
 	DefaultValue interface{}
 
 	// Holds the type of this option
-	Type reflect.Type
+	Type Type
 
 	// Extra options
 	Options OptionMeta
@@ -60,9 +72,9 @@ func String(name string, defaultValue string, description string) *Option {
 		Name:        name,
 		Description: description,
 
-		DefaultValue: reflect.ValueOf(defaultValue),
+		DefaultValue: defaultValue,
 		Value:        defaultValue,
-		Type:         reflect.TypeOf(defaultValue),
+		Type:         StringType,
 
 		Options: DefaultOptionMeta,
 	}
@@ -76,9 +88,9 @@ func Bool(name string, defaultValue bool, description string) *Option {
 		Name:        name,
 		Description: description,
 
-		DefaultValue: reflect.ValueOf(defaultValue),
+		DefaultValue: defaultValue,
 		Value:        defaultValue,
-		Type:         reflect.TypeOf(defaultValue),
+		Type:         BoolType,
 
 		Options: DefaultOptionMeta,
 	}
@@ -92,9 +104,9 @@ func Int(name string, defaultValue int64, description string) *Option {
 		Name:        name,
 		Description: description,
 
-		DefaultValue: reflect.ValueOf(defaultValue),
+		DefaultValue: defaultValue,
 		Value:        defaultValue,
-		Type:         reflect.TypeOf(defaultValue),
+		Type:         IntType,
 
 		Options: DefaultOptionMeta,
 	}
@@ -108,9 +120,9 @@ func Float(name string, defaultValue float64, description string) *Option {
 		Name:        name,
 		Description: description,
 
-		DefaultValue: reflect.ValueOf(defaultValue),
+		DefaultValue: defaultValue,
 		Value:        defaultValue,
-		Type:         reflect.TypeOf(defaultValue),
+		Type:         FloatType,
 
 		Options: DefaultOptionMeta,
 	}
@@ -126,9 +138,9 @@ func Enum(name string, possibleValues []string, defaultValue string, description
 		Name:        name,
 		Description: description,
 
-		DefaultValue: reflect.ValueOf(defaultValue),
+		DefaultValue: defaultValue,
 		Value:        defaultValue,
-		Type:         reflect.TypeOf(defaultValue),
+		Type:         StringType,
 
 		Options: DefaultOptionMeta,
 	}
@@ -142,41 +154,28 @@ func Enum(name string, possibleValues []string, defaultValue string, description
 
 // String returns the string value of the option. Will panic if the Option's type is not a string.
 func (o Option) String() string {
-	return reflect.ValueOf(o.Value).String()
+	return o.Value.(string)
 }
 
 // Bool returns the bool value of the option. Will panic if the Option's type is not a bool.
 func (o Option) Bool() bool {
-	return reflect.ValueOf(o.Value).Bool()
+	return o.Value.(bool)
 }
 
 // Float returns the float64 value of the option. Will panic if the Option's type is not a float64.
 func (o Option) Float() float64 {
-	return reflect.ValueOf(o.Value).Float()
+	return o.Value.(float64)
 }
 
 // Int returns the int64 value of the option. Will panic if the Option's type not an int64.
 func (o Option) Int() int64 {
-	return reflect.ValueOf(o.Value).Int()
+	return o.Value.(int64)
 }
 
 // defaultValueString returns the Option's default value as a string. If that value resolves to "", it'll return the
 // emptyReplacement argument instead.
 func (o Option) defaultValueString(emptyReplacement string) string {
-	v := o.DefaultValue.(reflect.Value)
-
-	ret := ""
-
-	switch o.Type.Kind() {
-	case reflect.String:
-		ret = fmt.Sprintf(`%v`, v.String())
-	case reflect.Int64:
-		ret = fmt.Sprintf(`%v`, v.Int())
-	case reflect.Float64:
-		ret = fmt.Sprintf(`%v`, v.Float())
-	case reflect.Bool:
-		ret = fmt.Sprintf(`%v`, v.Bool())
-	}
+	ret := fmt.Sprintf(`%v`, o.DefaultValue)
 
 	if ret == "" {
 		ret = emptyReplacement
@@ -192,23 +191,23 @@ func (o Option) DefaultValueString() string {
 
 // SetFromString attempts to set the Option's value as its proper type by parsing the string argument
 func (o *Option) SetFromString(val string) (err error) {
-	switch o.Type.Kind() {
-	case reflect.String:
+	switch o.Type {
+	case StringType:
 		o.Value = val
 
-	case reflect.Int64:
+	case IntType:
 		v, err := strconv.ParseInt(val, 0, 64)
 		if err == nil {
 			o.Value = v
 		}
 
-	case reflect.Float64:
+	case FloatType:
 		v, err := strconv.ParseFloat(val, 64)
 		if err == nil {
 			o.Value = v
 		}
 
-	case reflect.Bool:
+	case BoolType:
 		switch val {
 		case "1", "t", "T", "true", "TRUE", "True":
 			o.Value = true
