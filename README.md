@@ -75,35 +75,36 @@ You can override individual config values using flags:
 
 ```bash
 $ config-test --help
-Usage of config-test:
-  Takes two arguments and does an operation on them
+config-test (ver. 1.0.0)
+Takes two arguments and does an operation on them
 
-  Examples:
-     config-tester -addend.a=1 -addend-b=2
-     Adds 1 and 2, returns 3
+Examples:
+ $ config-tester -addend.a=1 -addend-b=2
+      Adds 1 and 2, returns 3
 
-     config-tester -addend.a=3 -addend-b=2 -subtract
-     Subtracts 2 from 3, returns 1
+ $ config-tester -addend.a=3 -addend-b=2 -subtract
+      Subtracts 2 from 3, returns 1
 
-  Flags:
-    -addend.a        (default: 10)
+Flags:
+ -addend.a        (default: 10)
      The first addend
 
-    -addend.b        (default: 3.141592653589793)
+ -addend.b        (default: 3.141592653589793)
      The second addend
 
-    -subtract        (default: false)
+ -subtract        (default: false)
      Subtract instead of add
 
 
-    -config          (default: config.json)
+ -config          (default: config.json)
      The filename of the config file to use
 
-    -config-export   (default: false)
+ -config-export   (default: false)
      Export the as-run configuration to a file
 
-    -config-generate (default: false)
+ -config-generate (default: false)
      Export the as-run configuration to a file, then exit
+
 ```
 
 ### Automatic config file generation
