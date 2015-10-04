@@ -68,26 +68,31 @@ func Usage() {
 
 	sort.Sort(sortedUsageOptionSlice(opts))
 
-	uprintln(`Usage of %s:`, App.Name)
+	if App.Version != "" {
+		uprintln(`%s (ver. %s)`, App.Name, App.Version)
+	} else {
+		uprintln(`%s`, App.Name)
+	}
+
 	if App.Description != "" {
-		uprintln(`  %s`, App.Description)
+		uprintln(`%s`, App.Description)
 	}
 
 	uprintln("")
 
 	if len(App.Examples) > 0 {
-		uprintln("  Examples:")
+		uprintln("Examples:")
 		for _, v := range App.Examples {
-			uprintln("     %s\n     %s\n", v.Cmd, v.Description)
+			uprintln(" $ %s\n      %s\n", v.Cmd, v.Description)
 		}
 	}
 
 	if len(opts) > 0 {
-		uprintln("  Flags:")
+		uprintln("Flags:")
 
 		lastSort := opts[0].Options.SortOrder
 
-		fmtStr := fmt.Sprintf("    -%%-%ds (default: %%s)\n     %%s\n", mlen)
+		fmtStr := fmt.Sprintf(" -%%-%ds (default: %%s)\n     %%s\n", mlen)
 		for _, opt := range opts {
 			if opt.Options.SortOrder != lastSort {
 				uprintln("")
