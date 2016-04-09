@@ -5,14 +5,33 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strings"
 )
 
-// AppInfo describes a Go program that uses go-config. It is used primarily in Usage(), or when a user uses -help.
-type AppInfo struct {
-	Name        string
-	Description string
-	Version     string
-	Examples    []Example
+// Name is the name of the application you're configuring.
+var Name = os.Args[0]
+
+// Description describes the application you're configuring.
+var Description string
+
+// Version is the version of the application you're configuring.
+var Version string
+
+// Examples contains a list of example commands and what they do.
+var Examples = []Example{}
+
+// SearchFiles contains a list of files which may or may not exist, and if they do, contain
+// configuration files. The last entry in this list is parsed first, and its values are
+// overwritten by values in files further up the list.
+var SearchFiles = []SearchFile{
+	{
+		Scope: "app",
+		Path:  "./config.json",
+	},
+	{
+		Scope: "user",
+		Path:  "$HOME/." + strings.ToLower(Name) + "/config.json",
+	},
 }
 
 // Example describes an example of a proper way to invoke the current Go program.
@@ -21,10 +40,11 @@ type Example struct {
 	Description string
 }
 
-// App is the AppInfo for the current Go program.
-var App = AppInfo{
-	Name:     os.Args[0],
-	Examples: []Example{},
+// SearchFile contains a potential config file path and a scope relating to where that file
+// is stored.
+type SearchFile struct {
+	Scope string
+	Path  string
 }
 
 // UsageWriter is the io.Writer to use for outputting Usage(). Defaults to stdout.
@@ -68,22 +88,23 @@ func Usage() {
 
 	sort.Sort(sortedUsageOptionSlice(opts))
 
-	if App.Version != "" {
-		uprintln(`%s (ver. %s)`, App.Name, App.Version)
+	if Version != "" {
+		uprintln(`%s (ver. %s)`, Name, Version)
 	} else {
-		uprintln(`%s`, App.Name)
+		uprintln(`%s`, Name)
 	}
 
-	if App.Description != "" {
-		uprintln(`%s`, App.Description)
+	if Description != "" {
+		uprintln(`%s`, Description)
 	}
 
 	uprintln("")
 
-	if len(App.Examples) > 0 {
+	if len(Examples) > 0 {
 		uprintln("Examples:")
-		for _, v := range App.Examples {
-			uprintln(" $ %s\n      %s\n", v.Cmd, v.Description)
+		for _, v := range Examples {
+			uprintln(" # %s", v.Description)
+			uprintln(" $ %s\n", v.Cmd)
 		}
 	}
 
@@ -107,4 +128,9 @@ func Usage() {
 			lastSort = opt.Options.SortOrder
 		}
 	}
+}
+
+// ExpandedPath returns the SearchFile's path expanded with environment variables.
+func (f SearchFile) ExpandedPath() string {
+	return os.ExpandEnv(f.Path)
 }

@@ -65,8 +65,8 @@ var DefaultOptionMeta = OptionMeta{
 	SortOrder:  0,
 }
 
-// String creates an Option with the parameters given of type string
-func String(name string, defaultValue string, description string) *Option {
+// Str creates an Option with the parameters given of type string
+func Str(name string, defaultValue string, description string) *Option {
 
 	v := Option{
 		Name:        name,
@@ -152,8 +152,14 @@ func Enum(name string, possibleValues []string, defaultValue string, description
 	return &v
 }
 
-// String returns the string value of the option. Will panic if the Option's type is not a string.
+// String implements fmt.Stringer. This is used for printing the OptionSet if needed; you should use Str() to
+// return the string value of a string Option, as it'll return what you expect all the time.
 func (o Option) String() string {
+	return fmt.Sprintf(`%v`, o.Value)
+}
+
+// Str returns the string value of the option. Will panic if the Option's type is not a string.
+func (o Option) Str() string {
 	return o.Value.(string)
 }
 

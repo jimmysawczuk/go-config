@@ -8,7 +8,7 @@ import (
 
 // IO defines an interface that allows reading and writing of OptionSets to external storage
 type IO interface {
-	Read() (map[string]interface{}, error)
+	Read() error
 	Write() error
 }
 
@@ -41,16 +41,28 @@ func (f FileIO) Read() (err error) {
 	fp, err := os.Open(f.Filename)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return IOError{
+				Type: "exist",
+				Path: f.Filename,
+				err:  err,
+			}
 		}
 
-		return fmt.Errorf("go-config: file i/o open error: %s", err)
+		return IOError{
+			Type: "open",
+			Path: f.Filename,
+			err:  err,
+		}
 	}
 	defer fp.Close()
 
 	fi, err := fp.Stat()
 	if err != nil {
-		return fmt.Errorf("go-config: file i/o stat error: %s", err)
+		return IOError{
+			Type: "stat",
+			Path: f.Filename,
+			err:  err,
+		}
 	}
 
 	n := fi.Size()
@@ -58,13 +70,21 @@ func (f FileIO) Read() (err error) {
 	by := make([]byte, n)
 	read, err := fp.Read(by)
 	if err != nil || int64(read) < n {
-		return fmt.Errorf("go-config: file i/o read error: %s", err)
+		return IOError{
+			Type: "read",
+			Path: f.Filename,
+			err:  err,
+		}
 	}
 
 	jmap := jsonConfigMap{}
 	err = json.Unmarshal(by, &jmap)
 	if err != nil {
-		return fmt.Errorf("go-config: json unmarshal error: %s", err)
+		return IOError{
+			Type: "unmarshal",
+			Path: f.Filename,
+			err:  err,
+		}
 	}
 
 	err = jmap.Parse()
@@ -73,4 +93,15 @@ func (f FileIO) Read() (err error) {
 	}
 
 	return nil
+}
+
+// IOError describes an error related to loading a config file.
+type IOError struct {
+	Type string
+	Path string
+	err  error
+}
+
+func (e IOError) Error() string {
+	return fmt.Sprintf("go-config: file i/o %s error on %s: %s", e.Type, e.Path, e.err)
 }
