@@ -21,52 +21,71 @@ import (
 
 func main() {
 	// Set up the app information for the --help output
-	config.App.Name = "config-test"
-	config.App.Version = "1.0.0"
-	config.App.Description = "Takes two arguments and does an operation on them"
+	config.Name = "config-test"
+	config.Version = "1.0.0"
+	config.Description = "Takes two arguments and does an operation on them"
 
-	config.App.Examples = []config.Example{
+	config.Examples = []config.Example{
 		{
-			Cmd:      `config-tester -addend.a=1 -addend-b=2`,
+			Cmd:         `config-tester -addend.a=1 -addend-b=2`,
 			Description: "Adds 1 and 2, returns 3",
 		},
 
 		{
-			Cmd:      `config-tester -addend.a=3 -addend-b=2 -subtract`,
+			Cmd:         `config-tester -addend.a=3 -addend-b=2 -subtract`,
 			Description: "Subtracts 2 from 3, returns 1",
 		},
 	}
 
-	// Add the variables
-	config.Add(config.Int("addend.a", 10, "The first addend").Exportable(true))
-	config.Add(config.Float("addend.b", math.Pi, "The second addend").Exportable(true))
-	config.Add(config.Bool("subtract", false, "Subtract instead of add").Exportable(true))
+	var res float64
 
-	// And build the config!
+	// Add the variables, store the options as variables for later
+	a := config.Add(config.Int("addend.a", 10, "The first addend").Exportable(true))
+	b := config.Add(config.Float("addend.b", math.Pi, "The second addend").Exportable(true))
+	sub := config.Add(config.Bool("subtract", false, "Subtract instead of add").Exportable(true))
+
+	// Build the config
 	config.Build()
 
-	// Note that we're only converting to float64s so we can add them; addend.a
-	// comes back as an int64 and addend.b comes back as a float64.
-	addend_1 := float64(config.Require("addend.a").Int())
-	addend_2 := float64(config.Require("addend.b").Float())
+	// Calculate the result
+	res = op(float64(a.Int()), b.Float(), sub.Bool())
 
+	fmt.Println("From the stored variables")
+	fmt.Println(a.Int(), b.Float(), sub.Bool())
+	fmt.Println(res)
+
+	// You can also get the config values on demand
+	addend_a := float64(config.Require("addend.a").Int())
+	addend_b := float64(config.Require("addend.b").Float())
 	subtract := config.Require("subtract").Bool()
 
-	var res float64
-	if !subtract {
-		res = addend_1 + addend_2
-	} else {
-		res = addend_1 - addend_2
-	}
+	res = op(addend_a, addend_b, subtract)
 
-	fmt.Println(addend_1, addend_2, subtract)
+	fmt.Println("------")
+	fmt.Println("From the on demand lookup")
+	fmt.Println(addend_a, addend_b, sub)
 	fmt.Println(res)
+
+}
+
+func op(a, b float64, subtract bool) (r float64) {
+	if !subtract {
+		r = a + b
+	} else {
+		r = a - b
+	}
+	return r
 }
 ```
 
 The above program produces the following output:
 ```bash
 $ config-test
+From the stored variables
+10 3.141592653589793 false
+13.141592653589793
+------
+From the on demand lookup
 10 3.141592653589793 false
 13.141592653589793
 ```
@@ -79,83 +98,48 @@ config-test (ver. 1.0.0)
 Takes two arguments and does an operation on them
 
 Examples:
- $ config-tester -addend.a=1 -addend-b=2
-      Adds 1 and 2, returns 3
+ # Adds 1 and 2, returns 3
+ $ config-tester -addend.a=1 -addend.b=2
 
- $ config-tester -addend.a=3 -addend-b=2 -subtract
-      Subtracts 2 from 3, returns 1
+ # Subtracts 2 from 3, returns 1
+ $ config-tester -addend.a=3 -addend.b=2 -subtract
 
 Flags:
- -addend.a        (default: 10)
+ -addend.a     (default: 10)
      The first addend
 
- -addend.b        (default: 3.141592653589793)
+ -addend.b     (default: 3.141592653589793)
      The second addend
 
- -subtract        (default: false)
+ -config-debug (default: false)
+     Show the files that are parsed and where each config value comes from
+
+ -subtract     (default: false)
      Subtract instead of add
 
 
- -config          (default: config.json)
+ -config       (default: <empty>)
      The filename of the config file to use
 
- -config-export   (default: false)
-     Export the as-run configuration to a file
+ -config-save  (default: <empty>)
+     Export the as-run configuration to one of the loaded configuration scopes
 
- -config-generate (default: false)
-     Export the as-run configuration to a file, then exit
+ -config-write (default: <empty>)
+     Export the as-run configuration to one of the loaded configuration scopes, then exit
 
 ```
 
 ### Automatic config file generation
 
-Every program that uses **go-config** will parse three options by default:
-
-* `config` (string), which indicates where to look for a config file to import and parse (default: ./config.json)
-* `config-export` (bool), which, if true, will trigger an export of the config file to the path provided by **config**.
-* `config-generate` (bool), which, if true, will trigger an export of the config file to the path provided by **config** and then exit with status `0`.
-
-You can run your program with `-config-generate` to generate a fresh config file, or you can overwrite the one that's there with the as-run configuration and continue execution using `-config-export`. Running the above program with `-config-export` yields:
-
-```bash
-$ config-test --config-export
-10 3.141592653589793 false
-13.141592653589793
-$ cat config.json
-{
-    "addend": {
-        "a": 10,
-        "b": 3.141592653589793
-    },
-    "subtract": false
-}
-```
-
-Notice that the two addends, which had keys with similar prefixes separated by periods (`.`), are organized in the config file to be hierarchial, but maintain a flat structure in your program.
+WIP
 
 ## More documentation
 
-More documentation is available [via GoDoc](http://godoc.org/github.com/jimmysawczuk/go-config).
+More documentation is available [via GoDoc][godoc].
 
 ## License
 
-	The MIT License (MIT)
-	Copyright (C) 2013-2015 by Jimmy Sawczuk
+go-config is released under [the MIT license][license].
 
-	Permission is hereby granted, free of charge, to any person obtaining a copy
-	of this software and associated documentation files (the "Software"), to deal
-	in the Software without restriction, including without limitation the rights
-	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-	copies of the Software, and to permit persons to whom the Software is
-	furnished to do so, subject to the following conditions:
-
-	The above copyright notice and this permission notice shall be included in
-	all copies or substantial portions of the Software.
-
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-	THE SOFTWARE.
+  [license]: https://github.com/jimmysawczuk/go-config/blob/master/LICENSE
+  [godoc]: http://godoc.org/github.com/jimmysawczuk/go-config
