@@ -4,26 +4,36 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 // IO defines an interface that allows reading and writing of OptionSets to external storage
 type IO interface {
 	Read() error
 	Write() error
+	Scope() string
 }
 
 // FileIO implements IO and writes to the filesystem
 type FileIO struct {
-	Filename string
+	filename string
+	scope    string
 }
 
-func (f FileIO) Write() error {
-	json, err := json.MarshalIndent(baseOptionSet.Export(), "", "    ")
+func (f FileIO) Write() (err error) {
+	partialExport := Require("config-partial").Bool()
+
+	json, err := json.MarshalIndent(baseOptionSet.Export(false, !partialExport), "", "\t")
 	if err != nil {
 		return fmt.Errorf("go-config: error marshaling config: %s", err)
 	}
 
-	fp, err := os.OpenFile(f.Filename, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0666)
+	err = os.MkdirAll(filepath.Dir(f.filename), 0755)
+	if err != nil {
+		return fmt.Errorf("go-config: file i/o directory error: %s", err)
+	}
+
+	fp, err := os.OpenFile(f.filename, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("go-config: file i/o open error: %s", err)
 	}
@@ -38,19 +48,19 @@ func (f FileIO) Write() error {
 }
 
 func (f FileIO) Read() (err error) {
-	fp, err := os.Open(f.Filename)
+	fp, err := os.Open(f.filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return IOError{
 				Type: "exist",
-				Path: f.Filename,
+				Path: f.filename,
 				err:  err,
 			}
 		}
 
 		return IOError{
 			Type: "open",
-			Path: f.Filename,
+			Path: f.filename,
 			err:  err,
 		}
 	}
@@ -60,7 +70,7 @@ func (f FileIO) Read() (err error) {
 	if err != nil {
 		return IOError{
 			Type: "stat",
-			Path: f.Filename,
+			Path: f.filename,
 			err:  err,
 		}
 	}
@@ -72,17 +82,19 @@ func (f FileIO) Read() (err error) {
 	if err != nil || int64(read) < n {
 		return IOError{
 			Type: "read",
-			Path: f.Filename,
+			Path: f.filename,
 			err:  err,
 		}
 	}
 
-	jmap := jsonConfigMap{}
+	jmap := jsonConfigMap{
+		scope: f.scope,
+	}
 	err = json.Unmarshal(by, &jmap)
 	if err != nil {
 		return IOError{
 			Type: "unmarshal",
-			Path: f.Filename,
+			Path: f.filename,
 			err:  err,
 		}
 	}
@@ -93,6 +105,10 @@ func (f FileIO) Read() (err error) {
 	}
 
 	return nil
+}
+
+func (f FileIO) Scope() string {
+	return f.scope
 }
 
 // IOError describes an error related to loading a config file.

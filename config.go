@@ -15,10 +15,12 @@ func init() {
 
 func resetBaseOptionSet() {
 	baseOptionSet = make(OptionSet)
-	Add(Str("config", "", "The filename of the config file to use").SortOrder(999))
-	Add(Bool("config-debug", false, "Show the files that are parsed and where each config value comes from"))
-	Add(Str("config-save", "", "Export the as-run configuration to one of the loaded configuration scopes").SortOrder(999))
-	Add(Str("config-write", "", "Export the as-run configuration to one of the loaded configuration scopes, then exit").SortOrder(999))
+	Add(Str("config", "", "A filename of an additional config file to use").SortOrder(998))
+	Add(Bool("config-debug", false, "Show the files/scopes that are parsed and which scope each config value comes from").SortOrder(998))
+	Add(Str("config-scope", "", "The scope that'll be written to").SortOrder(999))
+	Add(Bool("config-partial", false, "Export a partial copy of the configuration, only what is explicitly passed in via flags").SortOrder(999))
+	Add(Bool("config-save", false, "Export the configuration to the specified scope").SortOrder(999))
+	Add(Bool("config-write", false, "Export the configuration to the specified scope, then exit").SortOrder(999))
 }
 
 // Add adds an Option to the config's OptionSet
@@ -54,7 +56,10 @@ func Build() error {
 	// find all the config files, import them
 	for i := len(searchFiles) - 1; i >= 0; i-- {
 		// fmt.Println("Parsing", os.ExpandEnv(searchFiles[i]))
-		file := FileIO{Filename: searchFiles[i].ExpandedPath()}
+		file := FileIO{
+			filename: searchFiles[i].ExpandedPath(),
+			scope:    searchFiles[i].Scope,
+		}
 		err = file.Read()
 		if err != nil {
 			if ioerr, ok := err.(IOError); ok {
@@ -96,28 +101,36 @@ func Build() error {
 		return err
 	}
 
-	// export new config to file if necessary
-	if scope := Require("config-save").Str(); scope != "" {
-		for _, v := range searchFiles {
-			if v.Scope == scope {
-				file := FileIO{Filename: v.ExpandedPath()}
-				file.Write()
-			}
-		}
-
-		return fmt.Errorf("go-config: can't find a config file with the scope %s", scope)
+	for _, v := range baseOptionSet {
+		fmt.Println(v.DebugString())
 	}
 
-	if scope := Require("config-save").Str(); scope != "" {
+	// export new config to file if necessary
+	if Require("config-save").Bool() || Require("config-write").Bool() {
+
+		scope := Require("config-scope").Str()
+
+		found := false
 		for _, v := range searchFiles {
 			if v.Scope == scope {
-				file := FileIO{Filename: v.ExpandedPath()}
-				file.Write()
-				os.Exit(0)
+				found = true
+				file := FileIO{
+					filename: v.ExpandedPath(),
+					scope:    scope,
+				}
+				err := file.Write()
+				if err != nil {
+					return fmt.Errorf("go-config: can't write to file: %s", err)
+				}
+				if Require("config-write").Bool() {
+					os.Exit(0)
+				}
 			}
 		}
 
-		return fmt.Errorf("go-config: can't find a config file with the scope %s", scope)
+		if !found {
+			return fmt.Errorf("go-config: can't find a config file with the scope %s", scope)
+		}
 	}
 
 	os.Args = fs.Release()

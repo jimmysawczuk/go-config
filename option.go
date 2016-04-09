@@ -37,6 +37,9 @@ type Option struct {
 
 	// Extra options
 	Options OptionMeta
+
+	overridden bool
+	scopes     []string
 }
 
 // OptionMeta holds information for configuring options on Options
@@ -152,6 +155,10 @@ func Enum(name string, possibleValues []string, defaultValue string, description
 	return &v
 }
 
+func (o Option) DebugString() string {
+	return fmt.Sprintf(`name: %s, value: %v, type: %s, scopes: %s`, o.Name, o.Value, o.Type, o.scopes)
+}
+
 // String implements fmt.Stringer. This is used for printing the OptionSet if needed; you should use Str() to
 // return the string value of a string Option, as it'll return what you expect all the time.
 func (o Option) String() string {
@@ -190,9 +197,39 @@ func (o Option) defaultValueString(emptyReplacement string) string {
 	return ret
 }
 
+func (o *Option) AddScope(s string) {
+	if o.scopes == nil {
+		o.scopes = make([]string, 0)
+	}
+
+	o.scopes = append(o.scopes, s)
+}
+
+func (o *Option) HasScope(s string) bool {
+	for _, v := range o.scopes {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
 // DefaultValueString returns the Option's default value as a string.
 func (o Option) DefaultValueString() string {
 	return o.defaultValueString("")
+}
+
+// SetFromFlagValue attempts to set the Option's value as its proper type by parsing the string argument, and also
+// sets a hidden value on the Option indicating it was overridden by a flag argument.
+func (o *Option) SetFromFlagValue(val string) (err error) {
+	err = o.SetFromString(val)
+	if err != nil {
+		return err
+	}
+
+	o.overridden = true
+	o.AddScope("flag")
+	return nil
 }
 
 // SetFromString attempts to set the Option's value as its proper type by parsing the string argument

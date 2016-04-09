@@ -135,7 +135,7 @@ func (f *FlagSet) parseOne(builtInOnly bool) (seen bool, err error) {
 		f.unparsed = f.unparsed[1:]
 		if hasValue {
 			// the option exists, and we have a value, so we can set it
-			err := option.SetFromString(value)
+			err := option.SetFromFlagValue(value)
 			if err != nil {
 				return true, fmt.Errorf("Error setting option %s to %s: %s", name, value, err)
 			}
@@ -152,7 +152,7 @@ func (f *FlagSet) parseOne(builtInOnly bool) (seen bool, err error) {
 				value = f.unparsed[0]
 				f.unparsed = f.unparsed[1:]
 
-				err := option.SetFromString(value)
+				err := option.SetFromFlagValue(value)
 				if err != nil {
 					return true, fmt.Errorf("Error setting option %s to %s: %s", name, value, err)
 				}

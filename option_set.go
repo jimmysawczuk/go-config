@@ -9,14 +9,10 @@ import (
 type OptionSet map[string]*Option
 
 // Export returns a map that's suitable for pushing into a config.json file.
-func (os OptionSet) Export() map[string]interface{} {
-	return os.export(false)
-}
-
-func (os OptionSet) export(includeAll bool) map[string]interface{} {
+func (os OptionSet) Export(includeNonExportable bool, includeNonOverrides bool) map[string]interface{} {
 	tbr := make(map[string]interface{})
 	for _, v := range os {
-		if v.Options.Exportable || includeAll {
+		if (v.Options.Exportable || includeNonExportable) && (v.overridden || includeNonOverrides) {
 			parts := strings.Split(v.Name, ".")
 			var i int
 			var cursor = &tbr
