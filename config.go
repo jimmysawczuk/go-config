@@ -97,7 +97,7 @@ func Build() error {
 
 	// export new config to file if necessary
 	if scope := Require("config-save").Str(); scope != "" {
-		for _, v := range SearchFiles {
+		for _, v := range searchFiles {
 			if v.Scope == scope {
 				file := FileIO{Filename: v.ExpandedPath()}
 				file.Write()
@@ -108,7 +108,7 @@ func Build() error {
 	}
 
 	if scope := Require("config-save").Str(); scope != "" {
-		for _, v := range SearchFiles {
+		for _, v := range searchFiles {
 			if v.Scope == scope {
 				file := FileIO{Filename: v.ExpandedPath()}
 				file.Write()

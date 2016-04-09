@@ -72,8 +72,8 @@ func TestBasicConfigLoad(t *testing.T) {
 	Add(Int("addend.a", 10, "The first addend").Exportable(true).SortOrder(-1))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true).SortOrder(-1))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true).SortOrder(+1))
-	Add(String("bad_string", "test", "Defined as a string, but isn't").Exportable(true).SortOrder(+1))
+	Add(Str("name", "Basic Example", "Name of the example").Exportable(true).SortOrder(+1))
+	Add(Str("bad_string", "test", "Defined as a string, but isn't").Exportable(true).SortOrder(+1))
 
 	resetArgs()
 
@@ -99,7 +99,7 @@ func TestBasicConfigLoad(t *testing.T) {
 	c := float64(a) + float64(b)
 	assert.Equal(t, c, 10+3.8, "The operation on addend.a + addend.b should be 13.8")
 
-	name := Require("name").String()
+	name := Require("name").Str()
 	assert.Equal(t, name, "Basic Example", "Name should be \"Basic Example\"")
 
 	_, err = Get("invalid-parameter")
@@ -145,8 +145,8 @@ func TestRequiredConfigLoad(t *testing.T) {
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(String("param-1", "Value 1", "Name of the example").Exportable(true).AddFilter(NonEmptyString()))
-	Add(String("param-2", "Value 2", "").Exportable(true).AddFilter(NonEmptyString()))
+	Add(Str("param-1", "Value 1", "Name of the example").Exportable(true).AddFilter(NonEmptyString()))
+	Add(Str("param-2", "Value 2", "").Exportable(true).AddFilter(NonEmptyString()))
 
 	resetArgs()
 
@@ -166,10 +166,10 @@ func TestRequiredConfigLoad(t *testing.T) {
 	c := float64(a) + float64(b)
 	assert.Equal(t, c, 10+3.8, "The operation on addend.a + addend.b should be 13.8")
 
-	param1 := Require("param-1").String()
+	param1 := Require("param-1").Str()
 	assert.Equal(t, param1, "", "Name should be \"\" (invalid, but it should still parse)")
 
-	param2 := Require("param-2").String()
+	param2 := Require("param-2").Str()
 	assert.Equal(t, param2, "provided", "Name should be \"provided\"")
 
 	_, err = Get("invalid-parameter")
@@ -215,7 +215,7 @@ func TestErroredConfigLoad(t *testing.T) {
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
 	resetArgs()
 
@@ -258,7 +258,7 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
 	// and here we go!
 	os.Args = []string{
@@ -282,7 +282,7 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
 	c := float64(a) + float64(b)
 	assert.Equal(t, c, float64(4+4), "The operation on addend.a + addend.b should be 8")
 
-	name := Require("name").String()
+	name := Require("name").Str()
 	assert.Equal(t, name, "Flag override", "Name should be \"Flag override\"")
 
 	_, err = Get("invalid-parameter")
@@ -327,7 +327,7 @@ func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
 	// and here we go!
 	os.Args = []string{
@@ -357,7 +357,7 @@ func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
 	c := float64(a) - float64(b)
 	assert.Equal(t, c, float64(4-2), "The operation on addend.a - addend.b should be 2")
 
-	name := Require("name").String()
+	name := Require("name").Str()
 	assert.Equal(t, name, "Test", "Name should be \"Test\"")
 
 	_, err = Get("invalid-parameter")
@@ -401,7 +401,7 @@ func TestBasicConfigLoadWithFinalBooleanFlag(t *testing.T) {
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
 	// and here we go!
 	os.Args = []string{
@@ -430,7 +430,7 @@ func TestBasicConfigLoadWithFinalBooleanFlag(t *testing.T) {
 	c := float64(a) - float64(b)
 	assert.Equal(t, c, float64(4-2), "The operation on addend.a - addend.b should be 2")
 
-	name := Require("name").String()
+	name := Require("name").Str()
 	assert.Equal(t, name, "Test", "Name should be \"Test\"")
 
 	_, err = Get("invalid-parameter")
@@ -475,7 +475,7 @@ func TestBasicConfigLoadWithUndefinedFlags(t *testing.T) {
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
 	// and here we go!
 	os.Args = []string{
@@ -512,7 +512,7 @@ func TestBasicConfigLoadWithUndefinedFlags(t *testing.T) {
 	c := float64(a) - float64(b)
 	assert.Equal(t, c, float64(4-2), "The operation on addend.a - addend.b should be 2")
 
-	name := Require("name").String()
+	name := Require("name").Str()
 	assert.Equal(t, name, "Test", "Name should be \"Test\"")
 }
 
@@ -555,11 +555,11 @@ func TestBasicConfigWrite(t *testing.T) {
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
 	os.Args = []string{
 		`go-config`,
-		`-config-export`,
+		`-config-save=flag`,
 
 		`-addend.a`,
 		`15`,
@@ -582,7 +582,7 @@ func TestBasicConfigWrite(t *testing.T) {
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
 	resetArgs()
 
@@ -625,7 +625,7 @@ func TestEnumConfig(t *testing.T) {
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	Add(Enum("mode", []string{"subtract", "add"}, "add", "subtract or add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
 	err = Build()
 
@@ -635,13 +635,13 @@ func TestEnumConfig(t *testing.T) {
 	b := Require("addend.b").Float()
 	assert.Equal(t, b, float64(2), "addend.b should be 2")
 
-	mode := Require("mode").String()
+	mode := Require("mode").Str()
 	assert.Equal(t, mode, "subtract", "mode should be subtract")
 
 	c := float64(a) - float64(b)
 	assert.Equal(t, c, float64(4-2), "The operation on addend.a - addend.b should be 2")
 
-	name := Require("name").String()
+	name := Require("name").Str()
 	assert.Equal(t, name, "Test", "Name should be \"Test\"")
 }
 
@@ -675,7 +675,7 @@ func TestInvalidEnumConfig(t *testing.T) {
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	Add(Enum("mode", []string{"subtract", "add"}, "subtract", "subtract or add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
 	err = Build()
 
@@ -714,7 +714,7 @@ func TestTripleNestedOption(t *testing.T) {
 	Add(Int("equation.addend.a", 10, "The first addend").Exportable(true))
 	Add(Int("equation.addend.b", 5, "The second addend").Exportable(true))
 	Add(Enum("mode", []string{"subtract", "add"}, "subtract", "subtract or add").Exportable(true))
-	Add(String("name", "Basic Example", "Name of the example").Exportable(true))
+	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
 	err = Build()
 
