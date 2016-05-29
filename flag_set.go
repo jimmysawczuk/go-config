@@ -5,9 +5,13 @@ import (
 )
 
 var builtInFlags = map[string]bool{
-	"config":          true,
-	"config-export":   true,
-	"config-generate": true,
+	"config":       true,
+	"config-debug": true,
+
+	"config-write":   true,
+	"config-save":    true,
+	"config-partial": true,
+	"config-scope":   true,
 }
 
 type errUndefinedFlag struct {

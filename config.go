@@ -15,8 +15,10 @@ func init() {
 
 func resetBaseOptionSet() {
 	baseOptionSet = make(OptionSet)
+
 	Add(Str("config", "", "A filename of an additional config file to use").SortOrder(998))
 	Add(Bool("config-debug", false, "Show the files/scopes that are parsed and which scope each config value comes from").SortOrder(998))
+
 	Add(Str("config-scope", "", "The scope that'll be written to").SortOrder(999))
 	Add(Bool("config-partial", false, "Export a partial copy of the configuration, only what is explicitly passed in via flags").SortOrder(999))
 	Add(Bool("config-save", false, "Export the configuration to the specified scope").SortOrder(999))
@@ -101,9 +103,9 @@ func Build() error {
 		return err
 	}
 
-	for _, v := range baseOptionSet {
-		fmt.Println(v.DebugString())
-	}
+	// for _, v := range baseOptionSet {
+	// 	fmt.Println(v.DebugString())
+	// }
 
 	// export new config to file if necessary
 	if Require("config-save").Bool() || Require("config-write").Bool() {

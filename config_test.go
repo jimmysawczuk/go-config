@@ -16,7 +16,7 @@ import (
 
 var originalOSArgs []string
 var originalFlagSet *flag.FlagSet
-var tempDir string
+var tempDir, tempAppDir, tempUserDir string
 
 func init() {
 	// defined in usage.go, just tells Usage() where to direct output.
@@ -28,12 +28,33 @@ func init() {
 	originalFlagSet = flag.CommandLine
 
 	tempDir = path.Clean(os.TempDir() + "/go-config")
-
 	err := os.MkdirAll(tempDir, 0775)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating temporary directory: %s\n", err)
 		os.Exit(2)
 	}
+
+	SearchFiles = []SearchFile{
+		{
+			Scope: "app",
+			Path:  tempDir + "/app/config.json",
+		},
+		{
+			Scope: "user",
+			Path:  tempDir + "/user/config.json",
+		},
+	}
+
+	for _, s := range SearchFiles {
+		err := os.MkdirAll(tempDir+"/"+s.Scope, 0775)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error creating temporary directory: %s\n", err)
+			os.Exit(2)
+		}
+	}
+
+	tempAppDir = path.Clean(tempDir + "/app")
+	tempUserDir = path.Clean(tempDir + "/user")
 }
 
 func resetArgs() {
@@ -41,7 +62,21 @@ func resetArgs() {
 	flag.CommandLine = originalFlagSet
 }
 
+func writeToTemporaryFile(t *testing.T, out []byte, filepath string) {
+	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
+	if err != nil {
+		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
+		t.FailNow()
+	}
+
+	fp.Write(out)
+	fp.Close()
+}
+
 func TestBasicConfigLoad(t *testing.T) {
+	var err error
+	var filepath = tempAppDir + "/config.json"
+
 	// writing the config.json to a temporary file
 	configJSON := []byte(`{
     "addend": {
@@ -53,20 +88,7 @@ func TestBasicConfigLoad(t *testing.T) {
     "name": "Basic Example"
 }`)
 
-	filepath := tempDir + "/go-config-basic-config.json"
-
-	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
-	if err != nil {
-		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
-		t.FailNow()
-	}
-
-	fp.Write(configJSON)
-	fp.Close()
-
-	// rigging the test to use our temporary config file
-	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
+	writeToTemporaryFile(t, configJSON, filepath)
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true).SortOrder(-1))
@@ -115,6 +137,9 @@ func TestBasicConfigLoad(t *testing.T) {
 }
 
 func TestRequiredConfigLoad(t *testing.T) {
+	var err error
+	var filepath = tempAppDir + "/config.json"
+
 	// writing the config.json to a temporary file
 	configJSON := []byte(`{
     "addend": {
@@ -126,20 +151,7 @@ func TestRequiredConfigLoad(t *testing.T) {
     "param-2": "provided"
 }`)
 
-	filepath := tempDir + "/go-config-required-config.json"
-
-	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
-	if err != nil {
-		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
-		t.FailNow()
-	}
-
-	fp.Write(configJSON)
-	fp.Close()
-
-	// rigging the test to use our temporary config file
-	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
+	writeToTemporaryFile(t, configJSON, filepath)
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
@@ -185,6 +197,8 @@ func TestRequiredConfigLoad(t *testing.T) {
 }
 
 func TestErroredConfigLoad(t *testing.T) {
+	var filepath = tempAppDir + "/config.json"
+
 	// writing the config.json to a temporary file
 	// all of these values aren't properly set
 	configJSON := []byte(`{
@@ -196,20 +210,7 @@ func TestErroredConfigLoad(t *testing.T) {
     "name": false
 }`)
 
-	filepath := tempDir + "/go-config-basic-config.json"
-
-	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
-	if err != nil {
-		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
-		t.FailNow()
-	}
-
-	fp.Write(configJSON)
-	fp.Close()
-
-	// rigging the test to use our temporary config file
-	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
+	writeToTemporaryFile(t, configJSON, filepath)
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
@@ -228,7 +229,10 @@ func TestErroredConfigLoad(t *testing.T) {
 	assert.Equal(t, 4, buildErr.Len(), "There should be 4 build errors")
 }
 
-func TestBasicConfigLoadWithFlags(t *testing.T) {
+func TestConfigLoadWithFlags(t *testing.T) {
+	var err error
+	var filepath = tempAppDir + "/config.json"
+
 	// writing the config.json to a temporary file
 	configJSON := []byte(`{
     "addend": {
@@ -239,20 +243,7 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
     "name": "Basic Example"
 }`)
 
-	filepath := tempDir + "/go-config-basic-config.json"
-
-	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
-	if err != nil {
-		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
-		t.FailNow()
-	}
-
-	fp.Write(configJSON)
-	fp.Close()
-
-	// rigging the test to use our temporary config file
-	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
+	writeToTemporaryFile(t, configJSON, filepath)
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
@@ -260,14 +251,14 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
 	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
-	// and here we go!
 	os.Args = []string{
 		`go-config`,
 		`-addend.a=4`,
 		`-addend.b=4`,
-		`-subtract=false`,
-		`-name=Flag override`,
+		`-name=Overridden by flag`,
+		`-subtract`,
 	}
+
 	Build()
 
 	a := Require("addend.a").Int()
@@ -277,13 +268,13 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
 	assert.Equal(t, b, float64(4), "addend.b should be 4")
 
 	sub := Require("subtract").Bool()
-	assert.Equal(t, sub, false, "subtract should be false")
+	assert.Equal(t, sub, true, "subtract should be false")
 
 	c := float64(a) + float64(b)
 	assert.Equal(t, c, float64(4+4), "The operation on addend.a + addend.b should be 8")
 
 	name := Require("name").Str()
-	assert.Equal(t, name, "Flag override", "Name should be \"Flag override\"")
+	assert.Equal(t, name, "Overridden by flag", "Name should be \"Overridden by flag\"")
 
 	_, err = Get("invalid-parameter")
 	assert.NotEqual(t, err, nil, "Get(\"invalid-parameter\") should return an error")
@@ -297,7 +288,10 @@ func TestBasicConfigLoadWithFlags(t *testing.T) {
 	}, "Calling Usage() shouldn't panic")
 }
 
-func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
+func TestConfigLoadWithAlternateFlags(t *testing.T) {
+	var err error
+	var filepath = tempAppDir + "/config.json"
+
 	// writing the config.json to a temporary file
 	configJSON := []byte(`{
     "addend": {
@@ -308,20 +302,7 @@ func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
     "name": "Basic Example"
 }`)
 
-	filepath := tempDir + "/go-config-basic-config.json"
-
-	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
-	if err != nil {
-		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
-		t.FailNow()
-	}
-
-	fp.Write(configJSON)
-	fp.Close()
-
-	// rigging the test to use our temporary config file
-	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
+	writeToTemporaryFile(t, configJSON, filepath)
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
@@ -329,36 +310,37 @@ func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
 	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
-	// and here we go!
 	os.Args = []string{
 		`go-config`,
+
 		`-addend.a`,
 		`4`,
 
 		`-addend.b`,
-		`2`,
+		`4`,
+
+		`-name`,
+		`Overridden by flag`,
 
 		`-subtract`,
-
-		`--name`,
-		`Test`,
 	}
+
 	Build()
 
 	a := Require("addend.a").Int()
 	assert.Equal(t, a, int64(4), "addend.a should be 4")
 
 	b := Require("addend.b").Float()
-	assert.Equal(t, b, float64(2), "addend.b should be 2")
+	assert.Equal(t, b, float64(4), "addend.b should be 4")
 
 	sub := Require("subtract").Bool()
-	assert.Equal(t, sub, true, "subtract should be true")
+	assert.Equal(t, sub, true, "subtract should be false")
 
-	c := float64(a) - float64(b)
-	assert.Equal(t, c, float64(4-2), "The operation on addend.a - addend.b should be 2")
+	c := float64(a) + float64(b)
+	assert.Equal(t, c, float64(4+4), "The operation on addend.a + addend.b should be 8")
 
 	name := Require("name").Str()
-	assert.Equal(t, name, "Test", "Name should be \"Test\"")
+	assert.Equal(t, name, "Overridden by flag", "Name should be \"Overridden by flag\"")
 
 	_, err = Get("invalid-parameter")
 	assert.NotEqual(t, err, nil, "Get(\"invalid-parameter\") should return an error")
@@ -372,151 +354,9 @@ func TestBasicConfigLoadWithOtherFlags(t *testing.T) {
 	}, "Calling Usage() shouldn't panic")
 }
 
-func TestBasicConfigLoadWithFinalBooleanFlag(t *testing.T) {
-	// writing the config.json to a temporary file
-	configJSON := []byte(`{
-    "addend": {
-        "a": 10,
-        "b": 3.8
-    },
-    "subtract": false,
-    "name": "Basic Example"
-}`)
+func TestConfigWrite(t *testing.T) {
+	var filepath = tempAppDir + "/config.json"
 
-	filepath := tempDir + "/go-config-basic-config.json"
-	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
-	if err != nil {
-		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
-		t.FailNow()
-	}
-
-	fp.Write(configJSON)
-	fp.Close()
-
-	// rigging the test to use our temporary config file
-	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
-
-	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend").Exportable(true))
-	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
-	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
-
-	// and here we go!
-	os.Args = []string{
-		`go-config`,
-		`-addend.a`,
-		`4`,
-
-		`-addend.b`,
-		`2`,
-
-		`--name=Test`,
-
-		`-subtract`,
-	}
-	Build()
-
-	a := Require("addend.a").Int()
-	assert.Equal(t, a, int64(4), "addend.a should be 4")
-
-	b := Require("addend.b").Float()
-	assert.Equal(t, b, float64(2), "addend.b should be 2")
-
-	sub := Require("subtract").Bool()
-	assert.Equal(t, sub, true, "subtract should be true")
-
-	c := float64(a) - float64(b)
-	assert.Equal(t, c, float64(4-2), "The operation on addend.a - addend.b should be 2")
-
-	name := Require("name").Str()
-	assert.Equal(t, name, "Test", "Name should be \"Test\"")
-
-	_, err = Get("invalid-parameter")
-	assert.NotEqual(t, err, nil, "Get(\"invalid-parameter\") should return an error")
-
-	assert.Panics(t, func() {
-		_ = Require("invalid-parameter")
-	}, "Calling Require(\"invalid-parameter\") should panic")
-
-	assert.NotPanics(t, func() {
-		Usage()
-	}, "Calling Usage() shouldn't panic")
-}
-
-func TestBasicConfigLoadWithUndefinedFlags(t *testing.T) {
-	// writing the config.json to a temporary file
-	configJSON := []byte(`{
-    "addend": {
-        "a": 10,
-        "b": 3.8
-    },
-    "subtract": false,
-    "name": "Basic Example"
-}`)
-
-	filepath := tempDir + "/go-config-basic-config.json"
-
-	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
-	if err != nil {
-		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
-		t.FailNow()
-	}
-
-	fp.Write(configJSON)
-	fp.Close()
-
-	// rigging the test to use our temporary config file
-	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
-
-	// setting up our config options to read the temporary config.json properly
-	Add(Int("addend.a", 10, "The first addend").Exportable(true))
-	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
-	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
-	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
-
-	// and here we go!
-	os.Args = []string{
-		`go-config`,
-		`-addend.a`,
-		`4`,
-
-		`-addend.b`,
-		`2`,
-
-		`-subtract`,
-
-		`--name`,
-		`Test`,
-
-		`-addend.c`,
-		`4`,
-	}
-
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-	err = Build()
-
-	assert.NotNil(t, err, "The error should not be nil")
-
-	a := Require("addend.a").Int()
-	assert.Equal(t, a, int64(4), "addend.a should be 4")
-
-	b := Require("addend.b").Float()
-	assert.Equal(t, b, float64(2), "addend.b should be 2")
-
-	sub := Require("subtract").Bool()
-	assert.Equal(t, sub, true, "subtract should be true")
-
-	c := float64(a) - float64(b)
-	assert.Equal(t, c, float64(4-2), "The operation on addend.a - addend.b should be 2")
-
-	name := Require("name").Str()
-	assert.Equal(t, name, "Test", "Name should be \"Test\"")
-}
-
-func TestBasicConfigWrite(t *testing.T) {
 	// writing the config.json to a temporary file
 	configJSON := []byte(`{
     "addend": {
@@ -536,20 +376,8 @@ func TestBasicConfigWrite(t *testing.T) {
     "subtract": true
 }`)
 
-	filepath := tempDir + "/go-config-basic-config-write.json"
-
-	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
-	if err != nil {
-		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
-		t.FailNow()
-	}
-
-	fp.Write(configJSON)
-	fp.Close()
-
-	// rigging the test to use our temporary config file
+	writeToTemporaryFile(t, configJSON, filepath)
 	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
@@ -559,7 +387,9 @@ func TestBasicConfigWrite(t *testing.T) {
 
 	os.Args = []string{
 		`go-config`,
-		`-config-save=flag`,
+
+		`-config-save`,
+		`-config-scope=app`,
 
 		`-addend.a`,
 		`15`,
@@ -577,18 +407,16 @@ func TestBasicConfigWrite(t *testing.T) {
 	Build()
 
 	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
+	resetArgs()
 
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
 	Add(Float("addend.b", math.Pi, "The second addend").Exportable(true))
 	Add(Bool("subtract", false, "Subtract instead of add").Exportable(true))
 	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
-	resetArgs()
-
 	Build()
 
-	builtJSON, _ := json.Marshal(baseOptionSet.Export())
+	builtJSON, _ := json.Marshal(baseOptionSet.Export(false, true))
 	buf := bytes.Buffer{}
 	json.Compact(&buf, newConfigJSON)
 
@@ -596,6 +424,8 @@ func TestBasicConfigWrite(t *testing.T) {
 }
 
 func TestEnumConfig(t *testing.T) {
+	var filepath = tempAppDir + "/config.json"
+
 	// writing the config.json to a temporary file
 	configJSON := []byte(`{
     "addend": {
@@ -606,20 +436,9 @@ func TestEnumConfig(t *testing.T) {
     "name": "Test"
 }`)
 
-	filepath := tempDir + "/go-config-enum-config.json"
+	writeToTemporaryFile(t, configJSON, filepath)
 
-	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
-	if err != nil {
-		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
-		t.FailNow()
-	}
-
-	fp.Write(configJSON)
-	fp.Close()
-
-	// rigging the test to use our temporary config file
 	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
@@ -627,7 +446,7 @@ func TestEnumConfig(t *testing.T) {
 	Add(Enum("mode", []string{"subtract", "add"}, "add", "subtract or add").Exportable(true))
 	Add(Str("name", "Basic Example", "Name of the example").Exportable(true))
 
-	err = Build()
+	Build()
 
 	a := Require("addend.a").Int()
 	assert.Equal(t, a, int64(4), "addend.a should be 4")
@@ -646,6 +465,9 @@ func TestEnumConfig(t *testing.T) {
 }
 
 func TestInvalidEnumConfig(t *testing.T) {
+	var err error
+	var filepath = tempAppDir + "/config.json"
+
 	// writing the config.json to a temporary file
 	configJSON := []byte(`{
     "addend": {
@@ -656,20 +478,10 @@ func TestInvalidEnumConfig(t *testing.T) {
     "name": "Test"
 }`)
 
-	filepath := tempDir + "/go-config-enum-config.json"
-
-	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
-	if err != nil {
-		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
-		t.FailNow()
-	}
-
-	fp.Write(configJSON)
-	fp.Close()
+	writeToTemporaryFile(t, configJSON, filepath)
 
 	// rigging the test to use our temporary config file
 	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
@@ -683,6 +495,9 @@ func TestInvalidEnumConfig(t *testing.T) {
 }
 
 func TestTripleNestedOption(t *testing.T) {
+	var err error
+	var filepath = tempAppDir + "/config.json"
+
 	// writing the config.json to a temporary file
 	configJSON := []byte(`{
 	"equation": {
@@ -695,20 +510,10 @@ func TestTripleNestedOption(t *testing.T) {
 	"name": "Test"
 }`)
 
-	filepath := tempDir + "/go-config-triple-nested-option.json"
-
-	fp, err := os.OpenFile(filepath, os.O_RDWR+os.O_CREATE+os.O_TRUNC, 0644)
-	if err != nil {
-		t.Errorf("Couldn't open temporary config file at %s: %s", filepath, err)
-		t.FailNow()
-	}
-
-	fp.Write(configJSON)
-	fp.Close()
+	writeToTemporaryFile(t, configJSON, filepath)
 
 	// rigging the test to use our temporary config file
 	resetBaseOptionSet()
-	baseOptionSet.Require("config").SetFromString(filepath)
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("equation.addend.a", 10, "The first addend").Exportable(true))
