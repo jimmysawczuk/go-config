@@ -672,7 +672,86 @@ func TestCustomConfigFile(t *testing.T) {
 
 	written := readFromTemporaryFile(t, custompath)
 
-	fmt.Println(string(written), string(customConfigJSON))
-
 	assert.Equal(t, string(customConfigJSON), string(written), "Written config file should match expected")
+}
+
+func TestCascadingConfigFile(t *testing.T) {
+	var err error
+	var appFilePath = tempAppDir + "/config.json"
+	var userFilePath = tempUserDir + "/config.json"
+	var customFilePath = tempCustomDir + "/config.json"
+
+	// writing the config.json to a temporary file
+	userConfigJSON := []byte(`{
+	"addend": {
+		"a": 1,
+		"b": 1,
+		"c": 1
+	},
+	"subtract": false,
+	"name": "User config file"
+}`)
+
+	appConfigJSON := []byte(`{
+	"addend": {
+		"a": 2,
+		"c": 2
+	},
+	"name": "App config file"
+}`)
+
+	customConfigJSON := []byte(`{
+	"addend": {
+		"c": 3
+	}
+}`)
+
+	writeToTemporaryFile(t, userConfigJSON, userFilePath)
+	writeToTemporaryFile(t, appConfigJSON, appFilePath)
+	writeToTemporaryFile(t, customConfigJSON, customFilePath)
+	resetBaseOptionSet()
+
+	Add(Int("addend.a", 0, "The first addend").Exportable(true))
+	Add(Int("addend.b", 0, "The second addend").Exportable(true))
+	Add(Int("addend.c", 0, "The third addend").Exportable(true))
+	Add(Bool("subtract", true, "Subtract the arguments").Exportable(true))
+	Add(Str("name", "", "Name of the example").Exportable(true))
+
+	err = Build()
+	assert.Nil(t, err, "There is no error here")
+
+	a := Require("addend.a").Int()
+	b := Require("addend.b").Int()
+	c := Require("addend.c").Int()
+	subtract := Require("subtract").Bool()
+	name := Require("name").Str()
+
+	assert.Equal(t, int64(2), a, "addend.a should be 2")
+	assert.Equal(t, int64(1), b, "addend.b should be 1")
+	assert.Equal(t, int64(2), c, "addend.c should initially be 2")
+	assert.Equal(t, false, subtract, "subtract should be false")
+	assert.Equal(t, "App config file", name, "name should be App config file")
+
+	os.Args = []string{
+		"go-config",
+
+		"-config-file",
+		customFilePath,
+	}
+
+	err = Build()
+	assert.Nil(t, err, "There is no error here")
+
+	a = Require("addend.a").Int()
+	b = Require("addend.b").Int()
+	c = Require("addend.c").Int()
+	subtract = Require("subtract").Bool()
+	name = Require("name").Str()
+
+	assert.Equal(t, int64(2), a, "addend.a should be 2")
+	assert.Equal(t, int64(1), b, "addend.b should be 1")
+	assert.Equal(t, int64(3), c, "addend.c should ultimately be 3")
+	assert.Equal(t, false, subtract, "subtract should be false")
+	assert.Equal(t, "App config file", name, "name should be App config file")
+
 }
