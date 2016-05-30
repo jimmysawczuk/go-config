@@ -16,7 +16,7 @@ func init() {
 func resetBaseOptionSet() {
 	baseOptionSet = make(OptionSet)
 
-	Add(Str("config", "", "A filename of an additional config file to use").SortOrder(998))
+	Add(Str("config-file", "", "A filename of an additional config file to use").SortOrder(998))
 	Add(Bool("config-debug", false, "Show the files/scopes that are parsed and which scope each config value comes from").SortOrder(998))
 
 	Add(Str("config-scope", "", "The scope that'll be written to").SortOrder(999))
@@ -47,10 +47,10 @@ func Build() error {
 	searchFiles := make([]SearchFile, len(SearchFiles))
 	copy(searchFiles, SearchFiles)
 
-	overrideName := Require("config").String()
+	overrideName := Require("config-file").String()
 	if overrideName != "" {
 		searchFiles = append([]SearchFile{{
-			Scope: "flag",
+			Scope: "custom",
 			Path:  overrideName,
 		}}, searchFiles...)
 	}

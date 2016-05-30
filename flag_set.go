@@ -5,9 +5,8 @@ import (
 )
 
 var builtInFlags = map[string]bool{
-	"config":       true,
-	"config-debug": true,
-
+	"config-file":    true,
+	"config-debug":   true,
 	"config-write":   true,
 	"config-save":    true,
 	"config-partial": true,

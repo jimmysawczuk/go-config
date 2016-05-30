@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"path"
@@ -16,7 +17,7 @@ import (
 
 var originalOSArgs []string
 var originalFlagSet *flag.FlagSet
-var tempDir, tempAppDir, tempUserDir string
+var tempDir, tempAppDir, tempUserDir, tempCustomDir string
 
 func init() {
 	// defined in usage.go, just tells Usage() where to direct output.
@@ -53,8 +54,17 @@ func init() {
 		}
 	}
 
+	for _, s := range []SearchFile{SearchFile{Scope: "custom", Path: tempDir + "/custom/config.json"}} {
+		err := os.MkdirAll(tempDir+"/"+s.Scope, 0775)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error creating temporary directory: %s\n", err)
+			os.Exit(2)
+		}
+	}
+
 	tempAppDir = path.Clean(tempDir + "/app")
 	tempUserDir = path.Clean(tempDir + "/user")
+	tempCustomDir = path.Clean(tempDir + "/custom")
 }
 
 func resetArgs() {
@@ -73,6 +83,16 @@ func writeToTemporaryFile(t *testing.T, out []byte, filepath string) {
 	fp.Close()
 }
 
+func readFromTemporaryFile(t *testing.T, filepath string) []byte {
+	by, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		t.Errorf("Couldn't read temporary config file at %s: %s", filepath, err)
+		t.FailNow()
+	}
+
+	return by
+}
+
 func TestBasicConfigLoad(t *testing.T) {
 	var err error
 	var filepath = tempAppDir + "/config.json"
@@ -89,6 +109,7 @@ func TestBasicConfigLoad(t *testing.T) {
 }`)
 
 	writeToTemporaryFile(t, configJSON, filepath)
+	resetBaseOptionSet()
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true).SortOrder(-1))
@@ -152,6 +173,7 @@ func TestRequiredConfigLoad(t *testing.T) {
 }`)
 
 	writeToTemporaryFile(t, configJSON, filepath)
+	resetBaseOptionSet()
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
@@ -211,6 +233,7 @@ func TestErroredConfigLoad(t *testing.T) {
 }`)
 
 	writeToTemporaryFile(t, configJSON, filepath)
+	resetBaseOptionSet()
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
@@ -244,6 +267,7 @@ func TestConfigLoadWithFlags(t *testing.T) {
 }`)
 
 	writeToTemporaryFile(t, configJSON, filepath)
+	resetBaseOptionSet()
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
@@ -303,6 +327,7 @@ func TestConfigLoadWithAlternateFlags(t *testing.T) {
 }`)
 
 	writeToTemporaryFile(t, configJSON, filepath)
+	resetBaseOptionSet()
 
 	// setting up our config options to read the temporary config.json properly
 	Add(Int("addend.a", 10, "The first addend").Exportable(true))
@@ -437,7 +462,6 @@ func TestEnumConfig(t *testing.T) {
 }`)
 
 	writeToTemporaryFile(t, configJSON, filepath)
-
 	resetBaseOptionSet()
 
 	// setting up our config options to read the temporary config.json properly
@@ -479,8 +503,6 @@ func TestInvalidEnumConfig(t *testing.T) {
 }`)
 
 	writeToTemporaryFile(t, configJSON, filepath)
-
-	// rigging the test to use our temporary config file
 	resetBaseOptionSet()
 
 	// setting up our config options to read the temporary config.json properly
@@ -511,8 +533,6 @@ func TestTripleNestedOption(t *testing.T) {
 }`)
 
 	writeToTemporaryFile(t, configJSON, filepath)
-
-	// rigging the test to use our temporary config file
 	resetBaseOptionSet()
 
 	// setting up our config options to read the temporary config.json properly
@@ -532,4 +552,127 @@ func TestTripleNestedOption(t *testing.T) {
 	assert.Equal(t, int64(2), b, "addend_b should be 2")
 
 	assert.Equal(t, int64(2), a-b, "%d minus %d != 2", a, b)
+}
+
+func TestDifferentFlagFormats(t *testing.T) {
+	var err error
+	var filepath = tempAppDir + "/config.json"
+
+	// writing the config.json to a temporary file
+	configJSON := []byte(`{
+	"addend": {
+		"a": 1,
+		"b": 1
+	},
+	"subtract": true,
+	"name": "Config file"
+}`)
+
+	writeToTemporaryFile(t, configJSON, filepath)
+	resetBaseOptionSet()
+
+	// setting up our config options to read the temporary config.json properly
+	Add(Int("addend.a", 0, "The first addend").Exportable(true))
+	Add(Int("addend.b", 0, "The second addend").Exportable(true))
+	Add(Bool("subtract", true, "Subtract the arguments").Exportable(true))
+	Add(Str("name", "", "Name of the example").Exportable(true))
+
+	os.Args = []string{
+		`go-config`,
+
+		`--addend.a`,
+		`2`,
+
+		`--addend.b=2`,
+
+		`-subtract=f`,
+
+		`-name`,
+		`Test`,
+	}
+
+	// and here we go!
+	err = Build()
+
+	assert.Nil(t, err, "There is no error here")
+
+	a := Require("addend.a").Int()
+	b := Require("addend.b").Int()
+	subtract := Require("subtract").Bool()
+	name := Require("name").Str()
+
+	assert.Equal(t, int64(2), a, "addend_a should be 2")
+	assert.Equal(t, int64(2), b, "addend_b should be 2")
+	assert.Equal(t, false, subtract, "subtract should be false")
+	assert.Equal(t, "Test", name, "name should be Test")
+}
+
+func TestCustomConfigFile(t *testing.T) {
+	var err error
+	var filepath = tempAppDir + "/config.json"
+	var custompath = tempCustomDir + "/config.json"
+
+	// writing the config.json to a temporary file
+	configJSON := []byte(`{
+	"addend": {
+		"a": 1,
+		"b": 1
+	},
+	"subtract": true,
+	"name": "Config file"
+}`)
+
+	customConfigJSON := []byte(`{
+	"addend": {
+		"a": 2,
+		"b": 2
+	},
+	"name": "Config file",
+	"subtract": true
+}`)
+
+	writeToTemporaryFile(t, configJSON, filepath)
+	resetBaseOptionSet()
+
+	// setting up our config options to read the temporary config.json properly
+	Add(Int("addend.a", 0, "The first addend").Exportable(true))
+	Add(Int("addend.b", 0, "The second addend").Exportable(true))
+	Add(Bool("subtract", true, "Subtract the arguments").Exportable(true))
+	Add(Str("name", "", "Name of the example").Exportable(true))
+
+	os.Args = []string{
+		`go-config`,
+
+		"-config-file",
+		custompath,
+
+		"-config-scope=custom",
+		"-config-save",
+
+		`--addend.a`,
+		`2`,
+
+		`--addend.b=2`,
+	}
+
+	// and here we go!
+	err = Build()
+
+	assert.Nil(t, err, "There is no error here")
+
+	a := Require("addend.a").Int()
+	b := Require("addend.b").Int()
+	subtract := Require("subtract").Bool()
+	name := Require("name").Str()
+
+	assert.Equal(t, int64(2), a, "addend_a should be 2")
+	assert.Equal(t, int64(2), b, "addend_b should be 2")
+	assert.Equal(t, true, subtract, "subtract should be true")
+	assert.Equal(t, "Config file", name, "name should be Config file")
+
+	written := readFromTemporaryFile(t, custompath)
+
+	fmt.Println(string(written), string(customConfigJSON))
+
+	assert.Equal(t, string(customConfigJSON), string(written), "Written config file should match expected")
 }

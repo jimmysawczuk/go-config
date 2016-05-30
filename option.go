@@ -228,7 +228,7 @@ func (o *Option) SetFromFlagValue(val string) (err error) {
 	}
 
 	o.overridden = true
-	o.AddScope("cli")
+	o.AddScope("flag")
 	return nil
 }
 
