@@ -27,12 +27,12 @@ func main() {
 
 	config.Examples = []config.Example{
 		{
-			Cmd:         `config-test -addend.a=1 -addend.b=2`,
+			Cmd:         `config-tester -addend.a=1 -addend-b=2`,
 			Description: "Adds 1 and 2, returns 3",
 		},
 
 		{
-			Cmd:         `config-test -addend.a=3 -addend.b=2 -subtract`,
+			Cmd:         `config-tester -addend.a=3 -addend-b=2 -subtract`,
 			Description: "Subtracts 2 from 3, returns 1",
 		},
 	}
@@ -45,7 +45,10 @@ func main() {
 	sub := config.Add(config.Bool("subtract", false, "Subtract instead of add").Exportable(true))
 
 	// Build the config
-	config.Build()
+	err := config.Build()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
 	// Calculate the result
 	res = op(float64(a.Int()), b.Float(), sub.Bool())
@@ -99,39 +102,53 @@ Takes two arguments and does an operation on them
 
 Examples:
  # Adds 1 and 2, returns 3
- $ config-tester -addend.a=1 -addend.b=2
+ $ config-test -addend.a=1 -addend-b=2
 
  # Subtracts 2 from 3, returns 1
- $ config-tester -addend.a=3 -addend.b=2 -subtract
+ $ config-test -addend.a=3 -addend-b=2 -subtract
 
 Flags:
- -addend.a     (default: 10)
+ -addend.a       (default: 10)
      The first addend
 
- -addend.b     (default: 3.141592653589793)
+ -addend.b       (default: 3.141592653589793)
      The second addend
 
- -config-debug (default: false)
-     Show the files that are parsed and where each config value comes from
-
- -subtract     (default: false)
+ -subtract       (default: false)
      Subtract instead of add
 
 
- -config       (default: <empty>)
-     The filename of the config file to use
+ -config-debug   (default: false)
+     Show the files/scopes that are parsed and which scope each config value comes from
 
- -config-save  (default: <empty>)
-     Export the as-run configuration to one of the loaded configuration scopes
+ -config-file    (default: <empty>)
+     A filename of an additional config file to use
 
- -config-write (default: <empty>)
-     Export the as-run configuration to one of the loaded configuration scopes, then exit
+
+ -config-partial (default: false)
+     Export a partial copy of the configuration, only what is explicitly passed in via flags
+
+ -config-save    (default: false)
+     Export the configuration to the specified scope
+
+ -config-scope   (default: <empty>)
+     The scope that'll be written to
+
+ -config-write   (default: false)
+     Export the configuration to the specified scope, then exit
 
 ```
 
 ### Automatic config file generation
 
-WIP
+Config files can be saved as JSON files. go-config supports parsing multiple config files and in the event of two files having different values for one option, takes the most recently parsed option. The default order in which config files and arguments are parsed is:
+
+1. `$HOME/.<program-name>/config.json` (the user's home directory) (scope: `"user"`)
+2. `./config.json` (the working directory) (scope: `"app"`)
+3. A config file specified via the `-config-file` flag (optional) (scope: `"custom"`)
+4. Any flags specified on the command line at runtime (scope: `"flag"`)
+
+You can automatically write a config file by specifying `-config-scope` (see the list above), a `-config-file` if necessary, and either `-config-save` (which continues execution of the program after saving the config file) or `-config-write` (which terminates the program after writing). By default, this will write all of the exportable options to the specified file, but you can specify `-config-partial` to only write the config values specified by flag (and not the rest of the exportable options).
 
 ## More documentation
 
