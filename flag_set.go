@@ -5,9 +5,12 @@ import (
 )
 
 var builtInFlags = map[string]bool{
-	"config":          true,
-	"config-export":   true,
-	"config-generate": true,
+	"config-file":    true,
+	"config-debug":   true,
+	"config-write":   true,
+	"config-save":    true,
+	"config-partial": true,
+	"config-scope":   true,
 }
 
 type errUndefinedFlag struct {
@@ -135,7 +138,7 @@ func (f *FlagSet) parseOne(builtInOnly bool) (seen bool, err error) {
 		f.unparsed = f.unparsed[1:]
 		if hasValue {
 			// the option exists, and we have a value, so we can set it
-			err := option.SetFromString(value)
+			err := option.SetFromFlagValue(value)
 			if err != nil {
 				return true, fmt.Errorf("Error setting option %s to %s: %s", name, value, err)
 			}
@@ -152,7 +155,7 @@ func (f *FlagSet) parseOne(builtInOnly bool) (seen bool, err error) {
 				value = f.unparsed[0]
 				f.unparsed = f.unparsed[1:]
 
-				err := option.SetFromString(value)
+				err := option.SetFromFlagValue(value)
 				if err != nil {
 					return true, fmt.Errorf("Error setting option %s to %s: %s", name, value, err)
 				}

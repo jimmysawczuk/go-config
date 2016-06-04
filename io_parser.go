@@ -8,6 +8,7 @@ import (
 )
 
 type jsonConfigMap struct {
+	scope  string
 	config map[string]interface{}
 	err    error
 }
@@ -24,7 +25,7 @@ func (j *jsonConfigMap) Parse() error {
 		}
 	}()
 
-	err := parse(j.config, "")
+	err := parse(j.scope, j.config, "")
 	if jerr, ok := err.(jsonConfigMapParseErrorList); ok {
 		return jerr
 	}
@@ -75,21 +76,21 @@ func (j jsonConfigMapParseErrorList) Len() int {
 	return len(j)
 }
 
-func parse(configMap map[string]interface{}, prefix string) (err error) {
+func parse(scope string, configMap map[string]interface{}, prefix string) (err error) {
 
 	errs := make(jsonConfigMapParseErrorList, 0)
 
 	for k, v := range configMap {
 		s, exists := baseOptionSet.Get(prefix + k)
 		if exists {
-			err := parseElem(s, prefix+k, v)
+			err := parseElem(scope, s, prefix+k, v)
 			if err != nil {
 				errs = append(errs, err)
 			}
 		} else {
 			switch v.(type) {
 			case map[string]interface{}:
-				cerr := parse(v.(map[string]interface{}), prefix+k+".")
+				cerr := parse(scope, v.(map[string]interface{}), prefix+k+".")
 				if cerr != nil {
 					if childerrs, ok := cerr.(jsonConfigMapParseErrorList); ok {
 						errs.Merge(childerrs)
@@ -106,7 +107,7 @@ func parse(configMap map[string]interface{}, prefix string) (err error) {
 	return nil
 }
 
-func parseElem(opt *Option, key string, v interface{}) error {
+func parseElem(scope string, opt *Option, key string, v interface{}) error {
 	switch v.(type) {
 
 	case float64:
@@ -152,6 +153,8 @@ func parseElem(opt *Option, key string, v interface{}) error {
 			}
 		}
 	}
+
+	opt.AddScope(scope)
 
 	return nil
 }

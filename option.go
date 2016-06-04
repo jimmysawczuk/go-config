@@ -37,6 +37,10 @@ type Option struct {
 
 	// Extra options
 	Options OptionMeta
+
+	overridden bool
+	scopes     []string
+	isBuiltIn  bool
 }
 
 // OptionMeta holds information for configuring options on Options
@@ -65,8 +69,8 @@ var DefaultOptionMeta = OptionMeta{
 	SortOrder:  0,
 }
 
-// String creates an Option with the parameters given of type string
-func String(name string, defaultValue string, description string) *Option {
+// Str creates an Option with the parameters given of type string
+func Str(name string, defaultValue string, description string) *Option {
 
 	v := Option{
 		Name:        name,
@@ -152,8 +156,19 @@ func Enum(name string, possibleValues []string, defaultValue string, description
 	return &v
 }
 
-// String returns the string value of the option. Will panic if the Option's type is not a string.
+// DebugString returns a string describing some attributes about the Option, including the name, value, type and what scopes it came from.
+func (o Option) DebugString() string {
+	return fmt.Sprintf(`name: %s, value: %v, type: %s, scopes: %s`, o.Name, o.Value, o.Type, o.scopes)
+}
+
+// String implements fmt.Stringer. This is used for printing the OptionSet if needed; you should use Str() to
+// return the string value of a string Option, as it'll return what you expect all the time.
 func (o Option) String() string {
+	return fmt.Sprintf(`%v`, o.Value)
+}
+
+// Str returns the string value of the option. Will panic if the Option's type is not a string.
+func (o Option) Str() string {
 	return o.Value.(string)
 }
 
@@ -184,9 +199,41 @@ func (o Option) defaultValueString(emptyReplacement string) string {
 	return ret
 }
 
+// AddScope adds a scope to an Option indicating that it was parsed in a file with the given scope.
+func (o *Option) AddScope(s string) {
+	if o.scopes == nil {
+		o.scopes = make([]string, 0)
+	}
+
+	o.scopes = append(o.scopes, s)
+}
+
+// HasScope returns true if the Option has the specified scope.
+func (o *Option) HasScope(s string) bool {
+	for _, v := range o.scopes {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
 // DefaultValueString returns the Option's default value as a string.
 func (o Option) DefaultValueString() string {
 	return o.defaultValueString("")
+}
+
+// SetFromFlagValue attempts to set the Option's value as its proper type by parsing the string argument, and also
+// sets a hidden value on the Option indicating it was overridden by a flag argument.
+func (o *Option) SetFromFlagValue(val string) (err error) {
+	err = o.SetFromString(val)
+	if err != nil {
+		return err
+	}
+
+	o.overridden = true
+	o.AddScope("flag")
+	return nil
 }
 
 // SetFromString attempts to set the Option's value as its proper type by parsing the string argument
@@ -243,5 +290,10 @@ func (o *Option) AddFilter(v OptionFilterFunc) *Option {
 // SortOrder sets the sort order on the Option used in Usage().
 func (o *Option) SortOrder(i int) *Option {
 	o.Options.SortOrder = i
+	return o
+}
+
+func (o *Option) builtIn() *Option {
+	o.isBuiltIn = true
 	return o
 }
