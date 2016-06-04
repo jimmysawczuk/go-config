@@ -54,7 +54,7 @@ func init() {
 		}
 	}
 
-	for _, s := range []SearchFile{SearchFile{Scope: "custom", Path: tempDir + "/custom/config.json"}} {
+	for _, s := range []SearchFile{{Scope: "custom", Path: tempDir + "/custom/config.json"}} {
 		err := os.MkdirAll(tempDir+"/"+s.Scope, 0775)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating temporary directory: %s\n", err)
