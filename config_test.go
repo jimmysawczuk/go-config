@@ -753,5 +753,4 @@ func TestCascadingConfigFile(t *testing.T) {
 	assert.Equal(t, int64(3), c, "addend.c should ultimately be 3")
 	assert.Equal(t, false, subtract, "subtract should be false")
 	assert.Equal(t, "App config file", name, "name should be App config file")
-
 }

@@ -107,6 +107,7 @@ func (f FileIO) Read() (err error) {
 	return nil
 }
 
+// Scope returns the scope of the file
 func (f FileIO) Scope() string {
 	return f.scope
 }

@@ -155,6 +155,7 @@ func Enum(name string, possibleValues []string, defaultValue string, description
 	return &v
 }
 
+// DebugString returns a string describing some attributes about the Option, including the name, value, type and what scopes it came from.
 func (o Option) DebugString() string {
 	return fmt.Sprintf(`name: %s, value: %v, type: %s, scopes: %s`, o.Name, o.Value, o.Type, o.scopes)
 }
@@ -197,6 +198,7 @@ func (o Option) defaultValueString(emptyReplacement string) string {
 	return ret
 }
 
+// AddScope adds a scope to an Option indicating that it was parsed in a file with the given scope.
 func (o *Option) AddScope(s string) {
 	if o.scopes == nil {
 		o.scopes = make([]string, 0)
@@ -205,6 +207,7 @@ func (o *Option) AddScope(s string) {
 	o.scopes = append(o.scopes, s)
 }
 
+// HasScope returns true if the Option has the specified scope.
 func (o *Option) HasScope(s string) bool {
 	for _, v := range o.scopes {
 		if v == s {
