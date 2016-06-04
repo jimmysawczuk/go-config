@@ -16,13 +16,13 @@ func init() {
 func resetBaseOptionSet() {
 	baseOptionSet = make(OptionSet)
 
-	Add(Str("config-file", "", "A filename of an additional config file to use").SortOrder(998))
-	Add(Bool("config-debug", false, "Show the files/scopes that are parsed and which scope each config value comes from").SortOrder(998))
+	Add(Str("config-file", "", "A filename of an additional config file to use").SortOrder(998).builtIn())
+	Add(Bool("config-debug", false, "Show the files/scopes that are parsed and which scope each config value comes from").SortOrder(998).builtIn())
 
-	Add(Str("config-scope", "", "The scope that'll be written to").SortOrder(999))
-	Add(Bool("config-partial", false, "Export a partial copy of the configuration, only what is explicitly passed in via flags").SortOrder(999))
-	Add(Bool("config-save", false, "Export the configuration to the specified scope").SortOrder(999))
-	Add(Bool("config-write", false, "Export the configuration to the specified scope, then exit").SortOrder(999))
+	Add(Str("config-scope", "", "The scope that'll be written to").SortOrder(999).builtIn())
+	Add(Bool("config-partial", false, "Export a partial copy of the configuration, only what is explicitly passed in via flags").SortOrder(999).builtIn())
+	Add(Bool("config-save", false, "Export the configuration to the specified scope").SortOrder(999).builtIn())
+	Add(Bool("config-write", false, "Export the configuration to the specified scope, then exit").SortOrder(999).builtIn())
 }
 
 // Add adds an Option to the config's OptionSet
@@ -103,9 +103,15 @@ func Build() error {
 		return err
 	}
 
-	// for _, v := range baseOptionSet {
-	// 	fmt.Println(v.DebugString())
-	// }
+	if Require("config-debug").Bool() {
+		for _, v := range baseOptionSet {
+			if !v.isBuiltIn {
+				fmt.Println(v.DebugString())
+			}
+		}
+		os.Exit(0)
+		return nil
+	}
 
 	// export new config to file if necessary
 	if Require("config-save").Bool() || Require("config-write").Bool() {

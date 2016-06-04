@@ -40,6 +40,7 @@ type Option struct {
 
 	overridden bool
 	scopes     []string
+	isBuiltIn  bool
 }
 
 // OptionMeta holds information for configuring options on Options
@@ -289,5 +290,10 @@ func (o *Option) AddFilter(v OptionFilterFunc) *Option {
 // SortOrder sets the sort order on the Option used in Usage().
 func (o *Option) SortOrder(i int) *Option {
 	o.Options.SortOrder = i
+	return o
+}
+
+func (o *Option) builtIn() *Option {
+	o.isBuiltIn = true
 	return o
 }
